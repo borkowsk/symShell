@@ -28,6 +28,7 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 
 #include "SYMSHELL/symshell.h"		// prototypes of symshell graphix primitives
 
+#include <process.h>
 #include "_sig_msg.h"			// for compatibility with wb_posix.
 #include "symshwin.h"			// prototypes specific to this application
 
@@ -973,14 +974,18 @@ return  font_info.tmMaxCharWidth;
 int  char_height(char znak)
 /* Aktualne rozmiary znaku  */
 {
-int pom=raw_char_height()/muly;
+int pom=raw_char_height();
+pom/=muly;
+if(pom%muly>0) pom++;
 return pom;
 }
 
 int  char_width(char znak)
 /* potrzebne do pozycjonowania tekstu */
 {
-int pom=raw_char_width()/mulx;
+int pom=raw_char_width();
+pom/=mulx;
+if(pom%mulx>0) pom++;
 return pom;
 }
 
@@ -1463,6 +1468,58 @@ unsigned font_width=0;
 
 //if(!animate)
     TextOut(LocalMyHdc,x,y,bufor,len);
+//if(is_buffered)
+//    TextOut(MyBtmHdc,x,y,bufor,len);
+}
+
+void print_rgb(int x,int y,
+    unsigned r,unsigned g,unsigned b,
+	ssh_color back,
+    const char* format,...)
+{
+static double MyHdc;
+HDC LocalMyHdc;
+//RECT rc;
+size_t len;//Bedzie przypisane dlugoscia bufora
+//unsigned font_height=0;
+//unsigned font_width=0;
+
+   va_list argptr;
+
+   va_start(argptr, format);
+
+   vsprintf(bufor, format, argptr);
+
+   va_end(argptr);
+
+   if(straznik1!=0x77 || straznik2!=0x77)
+		{
+		fprintf(stderr,"FATAL: symshell.print(...) - bufor exced 1024b!");
+		abort();
+		}
+
+  /* Need length for FillRect*/
+    len = strlen(bufor);
+
+    /* Get string widths & hight */
+                assert(back<PALETE_LENGHT);
+    LocalMyHdc=GetMyHdc();
+	//font_height = font_info.tmHeight;
+	//font_width = font_info.tmAveCharWidth;
+	x*=mulx; /* Multiplicaton of coordinates */
+	y*=muly; /* if window is bigger */
+
+	/* Output text, centered on each line */
+	//rc.left=x;
+	//rc.top=y;
+	//rc.right=x+font_width*(len+1);
+	//rc.bottom=y+font_height;
+	//FillRect (LocalMyHdc, &rc, GetMyBrush(back));
+
+	SetTextColor(LocalMyHdc,RGB(r,g,b)); 
+    SetBkColor(LocalMyHdc,colors[back]);
+//if(!animate) ???
+    TextOut(LocalMyHdc,x,y,bufor,len); // SetBkMode(hdc, TRANSPARENT)???
 //if(is_buffered)
 //    TextOut(MyBtmHdc,x,y,bufor,len);
 }
@@ -3065,9 +3122,11 @@ void CreateBMPFile(HWND hwnd, LPTSTR pszFile, PBITMAPINFO pbi,
 
     pbih = (PBITMAPINFOHEADER) pbi;
     lpBits = (LPBYTE) GlobalAlloc(GMEM_FIXED, pbih->biSizeImage);
-    if (!lpBits)
+    if (!lpBits)	
+	{
+		 fprintf(stderr,"GlobalAlloc ENOMEM");
          errhandler("GlobalAlloc", hwnd, ENOMEM);
-
+	}
     /*
      * Retrieve the color table (RGBQUAD array) and the bits
      * (array of palette indices) from the DIB.
@@ -3075,7 +3134,10 @@ void CreateBMPFile(HWND hwnd, LPTSTR pszFile, PBITMAPINFO pbi,
 
     if (!GetDIBits(hDC, hBMP, 0, (WORD) pbih->biHeight,
                    lpBits, pbi, DIB_RGB_COLORS))
-        errhandler("GetDIBits", hwnd , EINVAL );//errno
+	{
+        fprintf(stderr,"GetDIBits EINVAL");
+		errhandler("GetDIBits", hwnd , EINVAL );//errno
+	}
 
     /* Create the .BMP file. */
 
@@ -3088,7 +3150,10 @@ void CreateBMPFile(HWND hwnd, LPTSTR pszFile, PBITMAPINFO pbi,
                    (HANDLE) NULL);
 
     if (hf == INVALID_HANDLE_VALUE)
+	{
+		fprintf(stderr,"CreateFile EBADF");
         errhandler("CreateFile", hwnd , EBADF );
+	}
 
     hdr.bfType = 0x4d42;        /* 0x42 = "B" 0x4d = "M" */
 
@@ -3139,8 +3204,10 @@ void CreateBMPFile(HWND hwnd, LPTSTR pszFile, PBITMAPINFO pbi,
     /* Close the .BMP file. */
 
     if (!CloseHandle(hf))
-           errhandler("CloseHandle", hwnd, EINVAL );
-
+	{
+		fprintf(stderr,"CloseHandle EINVAL");
+        errhandler("CloseHandle", hwnd, EINVAL );
+	}
     /* Free memory. */
 
     GlobalFree((HGLOBAL)lpBits);
@@ -3155,9 +3222,14 @@ int  dump_screen(const char* Filename)
     HBITMAP hbmScreen=0;
     HDC hdcCompatible=0;
     PBITMAPINFO info;
-    char bufor[1024];
+    char bufor[2048];
+	//TODO - problemy z za ma³ym rozmiarem obrazka!
+    if(strlen(Filename)+6 > 2048)
+	{
+		fprintf(stderr,"Filename \"%s\" is to long!!!",Filename);
+		return -1;
+	}
 
-                                               assert(strlen(Filename)+5<1024);
     sprintf(bufor,"%s.BMP",Filename);
 
 	_TRACE( 2 )
@@ -3233,6 +3305,8 @@ int  dump_screen(const char* Filename)
 	return 0; //Czy blad?
 }
 
+int title_with_pid=1;
+
 void shell_setup(const char* title,int iargc,const char* iargv[])
 /* Przekazanie parametrow wywolania */
 {
@@ -3265,6 +3339,7 @@ for(i=1;i<largc;i++)
 			   "\t -delay=[ms]\n"
 			   "\t -width=[pix]\n"
 			   "\t -height=[pix]\n"
+			   "\t -pid\n"
 			   "\t -help\n"
 			   "\t -logo\n"
 			   );
@@ -3298,6 +3373,12 @@ for(i=1;i<largc;i++)
 		{
 		Flexible=(largv[i][5]=='+')?1:0;
 		printf("Window sizing is %s\n",(Flexible?"FLEXIBLE":"DISCRETE"));
+		}
+		else
+	if(strncmp(largv[i],"-pid",4)==0)
+		{
+		title_with_pid=(largv[i][4]=='+')?1:0;
+		printf("PID in Window title is %s\n",(title_with_pid?"ON":"OFF"));
 		}
 	else
 	if(strncmp(largv[i],"-font=",6)==0)
@@ -3353,8 +3434,16 @@ for(i=1;i<largc;i++)
 if(animate)	/* Musi byc wlaczona bitmapa buforujaca */
 	is_buffered=1;/* zeby mozna bylo na nia pisac */
 
-//strncpy(window_name,title,sizeof(window_name));// (window_name = title;
-snprintf(window_name,sizeof(window_name),"%u: %s",getpid(),title);
+#ifdef __MSVC__
+#define snprintf _snprintf
+#define getpid   _getpid
+#endif
+
+if(title_with_pid)
+	snprintf(window_name,sizeof(window_name),"%u: %s", getpid() ,title);
+else
+	strncpy(window_name,title,sizeof(window_name));// (window_name = title;
+
 strncpy(icon_name,title,sizeof(icon_name));//icon_name = title;
 
 //fprintf(stdout,"\n");
