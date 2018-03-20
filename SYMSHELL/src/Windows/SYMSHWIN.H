@@ -8,8 +8,8 @@
 #define IDS_APPNAME                     1
 #define IDS_DESCRIPTION                 2
 #define IDI_APPICON                     101
+#define IDM_SIGNAL_COMMAND				40004
 #define IDM_EXIT						40005
-
 
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
@@ -149,3 +149,4 @@ extern MSDI msdiMain;
 #else
 #include <ver.h>
 #endif
+
