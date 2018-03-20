@@ -34,6 +34,8 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 
 #include "symshwin.h"			// prototypes specific to this application
 
+#include "_sig_msg.h"			// for compatibility with wb_posix.
+
 #include "symshell.h"
 
 #define MY_WIN_STYLE		      (WS_OVERLAPPEDWINDOW/* | WS_HSCROLL | WS_VSCROLL*/)
@@ -49,8 +51,9 @@ HWND		MyHwnd=0;						//Main window handle.
 static const char* progname="WB SYMSHELL APPLICATION "__DATE__;
 static const char* window_name="Windows WB SYMSHELL interface "__DATE__;
 static const char* icon_name="Windows SYMSHELL "__DATE__;
-static char szAppName[128]="SYMSHELL";   // The name of this application, if not in resources
-static char szClassName[128]="CLASS_SYMSHELL";//The name of window class
+
+char szAppName[128]="SYMSHELL";   // The name of this application, if not in resources
+char szClassName[128]="CLASS_SYMSHELL";//The name of window class
 
 static	HANDLE	hAccelTable;		// For read from resources
 static	HDC	MyHdc=0;				//Current HDC
@@ -2939,7 +2942,7 @@ int  dump_screen(const char* Filename)
 	return 0; //Czy blad?
 }
 
-void shell_setup(const char* title,int iargc,char* iargv[])
+void shell_setup(const char* title,int iargc,const char** iargv)
 /* Przekazanie parametrow wywolania */
 {
 int i;
