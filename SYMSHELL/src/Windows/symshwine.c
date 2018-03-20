@@ -417,7 +417,7 @@ static HPEN GetMyPen(ssh_color color,int size,int style)
 void	set_pen(ssh_color c,int size,int style)
 /* Ustala aktualny kolor linii za pomoca typu ssh_color */
 {
-	HDC hdc=GetMyHdc();   //TODO Mo¿e wraciæ OK nawet gdy nie ma okna!
+	HDC hdc=GetMyHdc();   //FIXME Mo¿e wraciæ OK nawet gdy nie ma okna!
 
 	curent_pen=GetMyPen(c,size,style);
     SelectObject(hdc,curent_pen);
@@ -1827,15 +1827,15 @@ BOOL InitInstance(HINSTANCE hInstance)
 
 	WB_Hwnd=MyHwnd; //Save to global variable
 
-    //
-    // **TODO** Call module specific instance initialization functions here.
-    //
+	//
+	// Call module specific instance initialization functions here.
+	//
 
     // **INPUT** Initialize the input module.
     if (!InitInput(MyHwnd))
     {
-        return FALSE;
-    }
+		return FALSE;
+	}
 
     return TRUE;                // We succeeded...
 }
@@ -2013,7 +2013,7 @@ LRESULT MsgSysCommand(HWND hwnd, UINT uMessage, WPARAM wparam, LPARAM lparam)
 	switch (GET_WM_COMMAND_ID(wparam,lparam))
     {
         //
-        // **TODO** Add cases here for application specific command messages.
+		// Add cases here for application specific command messages.
         //
 
 		case SC_CLOSE:
