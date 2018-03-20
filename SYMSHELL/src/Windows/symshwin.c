@@ -30,6 +30,8 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 #include "symshwin.h"			// prototypes specific to this application
 #include "_sig_msg.h"			// for compatibility with wb_posix.
 
+#define OLD_COLOUR_SCALE (0)   //Skala kolorów jak na mapie fizycznej
+
 #ifdef __MSVC__
 //#pragma warning(disable:4068)
 #pragma warning(disable : 4996) //deprecated functions
@@ -628,7 +630,8 @@ D_COLOUR GetColour(double v,double vmin,double vmax)
  /* To siê bezpoœrednio nie nadaje bo ma 360 wartoœci!
 void GroundColorMix(double* color, double x, double min, double max)
 {
-   /* Red = 0 Green = 1 Blue = 2	*/
+   // Red = 0 Green = 1 Blue = 2
+
 	double posSlope = (max-min)/60;
     double negSlope = (min-max)/60;
 
@@ -639,7 +642,7 @@ void GroundColorMix(double* color, double x, double min, double max)
         color[2] = min;
         return;
     }
-    else if ( x < 120 )
+	else if ( x < 120 )
     {
         color[0] = negSlope*x+2*max+min;
         color[1] = max;
@@ -727,8 +730,6 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 		  long wal1,wal2,wal3;
 		  double kat=(M_PI*2)*k/255.;
 
-
-		  double kat=(M_PI*2)*k/255.;
 		  //  LONG USED SCALE
 		  wal1=(long)(255*sin(kat*1.22));
 		  if(wal1<0) wal1=0;
