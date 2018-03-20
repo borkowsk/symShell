@@ -1,0 +1,233 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>SYMSHELL 0.93</TITLE>
+</HEAD>
+<BODY>
+
+<B><U><FONT SIZE=7><P ALIGN="CENTER">SYMSHELL 0.91</P>
+</U></FONT><FONT FACE="Times New Roman"><P ALIGN="CENTER">(Zaprojektowa&#322; i zaimplementowa&#322; Wojciech Borkowski)</P>
+</B></FONT><FONT FACE="TimesNewRomanPS"><P ALIGN="CENTER"></P>
+<P ALIGN="CENTER">&nbsp;</P>
+</FONT><B><FONT FACE="Times New Roman"><P ALIGN="CENTER">PRZENO&#346;NY FUNKCJE GRAFICZNE DLA PROSTYCH APLIKACJI C/C++</P>
+</B></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><FONT FACE="Times New Roman"><P> &#9;Problem przeno&#347;no&#347;ci aplikacji pomi&#281;dzy ró&#380;nymi platformami sprz&#281;towymi i systemami operacyjnymi jest zmor&#261; m&#281;cz&#261;c&#261; programistów od zarania dziejów informatyki. J&#281;zyki C i C++ nie s&#261; pod tym wzgl&#281;dem najgorsze bowiem istniej&#261; ich ogólnie przyj&#281;te standardy pozwalaj&#261;ce uzyska&#263; przeno&#347;no&#347;&#263; na poziomie kodu &#378;ród&#322;owego o i</FONT>l<FONT FACE="Times New Roman">e tylko istnieje kompilator C/C++ na dan&#261; platform&#281;. K&#322;opot z tym ze standardy te nie obejmuj&#261; bardziej zaawansowanych operacji wej&#347;cia/wyj&#347;cia nawet dotycz&#261;cych terminala/ekranu tekstowego, nie mówi&#261;c ju&#380; o operacjach graficznych. Tzw. standardowe wej&#347;ci</FONT>e<FONT FACE="Times New Roman">/wyj&#347;cie pozostaje ci&#261;gle na poziomie "teletype" jako najmniejszego wspólnego mianownika. Je&#347;li potrzebne jest co&#347; wi&#281;cej - np. proste wy&#347;wietlenie paru punktów czy kresek na ekranie czy wy&#347;wietlenie ramki z tekstem na &#347;rodku(!) ekranu to de facto nawet u</FONT>z<FONT FACE="Times New Roman">yskanie aplikacji przeno&#347;nej pomi&#281;dzy ró&#380;nymi systemami "unix'owymi" nie jest zadaniem ca&#322;kiem trywialnym. Co dopiero gdy program musi mie&#263; wersje pracuj&#261;ce pod DOS'em, Windows , X-windows czy unix'owym terminalu tekstowym!</P>
+<P>Dla du&#380;ych (i bogatych) firm softwarowych czy innych zespo&#322;ów programistów istniej&#261; rozwi&#261;zania w postaci gotowych bibliotek GUI o zapewnionej przeno&#347;no&#347;ci. Nawet MFC Microsoftu posiada (podobno) wersje na platform&#281; unix/Motif. S&#261; to jednak rozwi&#261;zania kosztowne, zazwyczaj niedost&#281;pne w</FONT> <FONT FACE="Times New Roman">postaci kodu &#378;ród&#322;owego co automatycznie ogranicza  ilo&#347;&#263; potencjalnych platform. Przede wszystkim s&#261; to jednak rozwi&#261;zania bardzo kosztowne i zwykle zbyt du&#380;ego kalibru by obci&#261;&#380;a&#263; nimi proste aplikacje. </P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">Poniewa&#380; odk&#261;d zacz&#261;&#322;em programowa&#263; w C/C++ , robi&#281; to na co najmniej dwóch platformach, a ostatnio na 5(!), postanowi&#322;em rozwi&#261;za&#263; ten problem na swoje potrzeby. Dopracowa&#322;em si&#281; zestawu modu&#322;ów prostego interface'u graficznego razem obs&#322;uguj&#261;cych, i DOS, i MS Windows, i unix/X-windows. Mo&#380;liwe jest te</FONT>z<FONT FACE="Times New Roman"> stosunkowo &#322;atwe dopisanie kolejnych.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+<P>&nbsp;</P>
+</FONT><B><FONT FACE="Times New Roman"><P ALIGN="CENTER">SK&#321;AD PAKIETU</P>
+</B></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><FONT FACE="Times New Roman"><P> Maksymalna zawarto&#347;&#263; dystrybucji pakietu obejmuje w obecnej wersji 0.9 nast&#281;puj&#261;ce pliki:</P>
+</FONT><FONT FACE="TimesNewRomanPS"><DIR>
+
+</FONT><B><P>KATALOG ROOT:</P>
+</B><P>*<B><I>platform.h </I> </B><FONT FACE="Times New Roman">- plik nag&#322;ówkowy s&#322;u&#380;&#261;cy znormalizowanej detekcji u&#380;ytego kompilatora i platform</FONT>y<FONT FACE="TimesNewRomanPS">.</P>
+</FONT><P>*<B><I>symshell.h </B></I><FONT FACE="Times New Roman"> - plik nag&#322;ówkowy interface'u . Wszystkie modu&#322;y implementacyjne musz&#261; by&#347; z nim zgodne.</P>
+</FONT><P>*<B><I>errorent.c</I> </B>- standardowa definicja zmiennej  WB_error_enter_before_clean.</P>
+<FONT FACE="Times New Roman"><P>*inne pochodzace z powi&#261;zanych dystrybucji np </FONT><B>graphs</B>.</P>
+<FONT FACE="TimesNewRomanPS">
+<B><P>KATALOG X11:</P>
+</B></FONT><P>*<B><I>symshx11.c</B></I><FONT FACE="Times New Roman"> - plik implementuj&#261;cy funkcje SYMSHELL'a na platformie X-windows</P>
+</FONT><P>*<B><I>icon.h</B></I><FONT FACE="Times New Roman"> - plik nag&#322;ówkowy dla ikony aplikacji w wersji X-windows</P>
+</FONT><P>*<B><I>wbx11ico.c</B></I><FONT FACE="Times New Roman"> - plik ze standardow&#261; definicj&#261; ikony dla aplikacji w wersji X-windows</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+<B><P>KATALOG WIN:</P>
+</B></FONT><P>*<B><I>symshmsc.rc</B></I> - wzorcowy plik zasob&oacute;w dla aplikacji w wersji Win32 kompatybilny MS Visual C++ 4.0</P>
+<P>*<B><I>symshwin.c </B>-</I><FONT FACE="Times New Roman"> plik implementuj&#261;cy funkcje SYMSHELL'a na platformie Win32 (testowany na Windows NT  i Windows 95)</P>
+</FONT><P>*<B><I>symshwin.h ,win16ext.h, resources.h</B> </I><FONT FACE="Times New Roman">- lokalne definicje niezb&#281;dne do kompilacji modu&#322;u symshwin.c i  jego zasobów.</P>
+</FONT><P>*<B><I>symshwin.ico</B></I> - standardowa ikona aplikacji dla wersji Win32</P>
+<P>*<B><I>symshwin.rc</B></I> - wzorcowy plik zasob&oacute;w dla aplikacji w wersji Win32 kompatybilny z Borland 5.0</P>
+<P>*<B><I>winmain.c</B></I><FONT FACE="Times New Roman"> - plik przekszta&#322;caj&#261;cy wywo&#322;anie funkcji WinMain() aplikacji GUI Win32 na wywo&#322;anie standardowej funkcji main(). Niekonieczny dla aplikacji CONSOLE Win32.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+<P>&nbsp;</P>
+<B><P>KATALOG GRX:</P>
+</B></FONT><P>*<B><I>symshgrx.c</B></I><FONT FACE="Times New Roman"> - plik implementuj&#261;cy funkcje SYMSHELL'a na platformy TURBOC i DJGPP z u&#380;</FONT>yciem biblioteki graficznej GRX lub GRX2.0</P>
+<FONT FACE="TimesNewRomanPS">
+<B><P>KATALOG TXT:</P>
+</B></FONT><P>*<B><I>symshcur.c</B> </I><FONT FACE="Times New Roman">- plik implementuj&#261;cy funkcje SYMSHELL'a w pe&#322;noekranowym trybie terminala tekstowego. Oczywi&#347;cie rozdzielczo&#347;ci s&#261; rz&#281;du 80x25 lub 132x40. W obecnej wersji nie zawiera juz w pelni funkcj</FONT>onalnej implementacji.</P>
+<P>*<B><I>symshtxt.c</B> </I><FONT FACE="Times New Roman">- atrapa implementacji pos&#322;uguj&#261;ca si&#281; (prawie) standardowym wej&#347;ciem/wyj&#347;ciem i wyprowadzaj&#261;ca na ekran terminala jedynie informacje tekstow&#261;. Mo&#380;e te&#380; by&#263; zupe&#322;nie "g&#322;ucha" co umo&#380;liwia &#322;atwe przerobienie (przez relinkowanie) aplikacji graficznej na zadanie obliczeniowe pracuj&#261;ce w tle.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+<B><P>KATALOG BIN:</P>
+</B></FONT><P>*<B><I>BC5.0/symshwin.obj,winmain.obj</B></I><FONT FACE="Times New Roman"> - skompilowany modu&#322; w wersji dla Win32 kompilatora  Borland 5.0</P>
+</FONT><P>*<B><I>DJGPP/symshx11.o</B></I><FONT FACE="Times New Roman"> - skompilowany modu&#322; w wersji dla DJGPP (32 bit DOS)</P>
+</FONT><P>*<B><I>GRX/symshgrx.o</B></I><FONT FACE="Times New Roman"> - skompilowany modu&#322; w wersji dla DJGPP 2.0 . Biblioteka GRX 2.0 </P>
+</FONT><P>*<B><I>IRIX/symshx11.o</I> </B><FONT FACE="Times New Roman">- skompilowany modu&#322; w wersji dla systemu SG IRIX 6.x</P>
+</FONT><P>*<B><I>LINUX/symshx11.o</B></I><FONT FACE="Times New Roman"> - skompilowany modu&#322; dla systemu LINUX (i386)</P>
+</FONT><P>*<B><I>MSC4.0/symshwin.obj,winmain.obj</B></I> - skompilow<FONT FACE="Times New Roman">ane modu&#322;y w wersji dla Win32 kompilatora MS Visual C++ 4.0</FONT><FONT FACE="TimesNewRomanPS">.</P>
+<P>*<B>MSVC4.0/symshmsc.res</B> - skompilowany wzorcowy plik zasobow.</P>
+</FONT><P>*<B><I>TC/symshgx1.obj, TC/symshgx1.obj </B></I><FONT FACE="Times New Roman">- skompilowany modu&#322; w wersji dla DOS BC/TC Bibliotek&#281; GRX dla DOS trzeba mie&#263; z innego &#378;ród&#322;a.</P>
+</FONT><P>zawar<FONT FACE="Times New Roman">ta jest w pe&#322;nej dystrybucji DJGPP.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>KATALOG TESTS:</P>
+</B><FONT FACE="Times New Roman"><P>*ro&#380;norodne programy testowe i demonstracyjne.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>KATALOG DOCS:</P>
+</B><FONT FACE="Times New Roman"><P>*pliki dokumentacji w ro&#378;nych formatach.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>KATALOG GRAPHS:</P>
+</B><FONT FACE="Times New Roman"><P>*Pliki obiektowej biblioteki na&#380;&#281;dzi programowania symulacji. Opisane w plikach</P>
+</FONT><P>dokumentacyjnych <B><I>GRAPHS.RTF</B></I> lub analogicznych.</P>
+<FONT FACE="TimesNewRomanPS">
+<P>&nbsp;</P>
+<P>&nbsp;</P></DIR>
+
+</FONT><FONT FACE="Times New Roman"><P>Jak dotychczas nie zaimplementowa&#322;em SYMSHELL'a w grafice BGI  Borlanda i sam ju&#380; tego nie zrobi&#281;, ale je&#347;li kto&#347; b&#281;dzie mia&#322; ochot&#281; to ch&#281;tnie do&#322;&#261;cz&#281; do dystrybucji, jak równie&#380; inne, o których dotychczas nie pomy&#347;la&#322;em lub nie mia&#322;em mo&#380;liwo&#347;ci np. ma MacOS. Chwilowo nie mam dost&#281;pu do Linux'a wi&#281;c nie proponuje modu&#322;ów skompilowanych dla tego systemu jednak wersje CURSES i X11 powinny da&#263; si&#281; tam skompilowa&#263; bez problemów.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><I><P>UWAGA: </P>
+</B></I><FONT FACE="Times New Roman"><P>Nie ka&#380;da wersja dystrybucyjna pakietu zawiera wszystkie pliki. W szczególno&#347;ci wersje shareware nie zawieraj&#261; kodów &#378;ród&#322;owych dla modu&#322;ów Win32 i X11, a wersje demo nie zawieraj&#261; nie wygasaj&#261;cych (bezterminowych) modu&#322;ów skompilowanych dla tych platform.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+<P>&nbsp;</P>
+</FONT><B><P ALIGN="CENTER">OPIS INTERFACE'U SYMSHELL</P>
+</B><FONT FACE="TimesNewRomanPS">
+<P>&#9;</FONT><FONT FACE="Times New Roman">SYMSHELL jest zestawem funkcji implementowanych w j&#281;zyku C, ale oczywi&#347;cie mo&#380;liwych do u&#380;ycia równie&#380; w C++ .  Jego ogólna filozofia  wywodzi si&#281; z prostych programów symulacyjnych pisanych pod DOS'em, st&#261;d nazwa, ale nadaje si&#281; te&#380; do pisania prostych aplikacji przetwarzaj&#261;cych dane, wizualizuj&#261;cych je, a tak&#380;e innych, je&#347;li autorowi zale&#380;y na zachowaniu przeno&#347;no&#347;ci. Jedynym warunkiem jest zachowanie ogólnej struktury aplikacji wg. nast&#281;puj&#261;cego schematu:</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+<P>&#9;</FONT>1)ustalenie parametr&oacute;w pracy SYMSHELL'a</P>
+<FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">2)otwarcie trybu/okna graficznego funkcj&#261;</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;&#9;</FONT>init_plot(...)</P>
+<FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">3)g&#322;ówna p&#281;tla aplikacji u&#380;ywaj&#261;ca funkcji SYMSHELL'a</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>  Dla poprawnej pracy. szczeg&oacute;lnie na platformach okienkowych aplikacja MUSI &#9;</P>
+<FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">  u&#380;ywa&#263; funkcji input_ready() , get_char() i flush_plot()</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">  oraz reagowa&#263; na znaki specjalne:</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;&#9;</FONT>\b - zdarzenie myszy </P>
+<FONT FACE="TimesNewRomanPS"><P>&#9;&#9;</FONT>\r - odrysowanie ekranu</P>
+<FONT FACE="TimesNewRomanPS"><P>&#9;&#9;</FONT><FONT FACE="Times New Roman">EOF - koniec wej&#347;cia SYMSHELL'a </P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">4)Zamkni&#281;cie grafiki funkcja close_plot()</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><U><FONT FACE="Times New Roman"><P>Funkcje s&#261; opisane w kolejno&#347;ci w jak w pliku nag&#322;ówkowym "symshell.h" :</P>
+</U></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><I><U><FONT FACE="Times New Roman"><P>Funkcje konfiguruj&#261;ce i zarz&#261;dzaj&#261;ce:</P>
+</I></U></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>int  mouse_activity(int yes);</P>
+</B><FONT FACE="Times New Roman"><P>Ustala czy mysz ma by&#263; obs&#322;ugiwana przez aplikacje. Zwraca poprzedni stan flagi. Je&#347;li yes=0 i je&#347;li aplikacja jest jedyn&#261; "w&#322;a&#347;cicielk&#261;" ekranu to kursor nie pojawi si&#281;  lub zostanie wygaszony. W przeciwnym wypadku aplikacja jedynie przestaje odbiera&#263; zdarzenia myszy. Je&#347;li aplikacja przed otwarciem okna nie zadeklaruje czy chce u&#380;ywa&#263; myszy to mo&#380;e si&#281; ona nie da&#263; zaaktywowa&#263;. Rozs&#261;dne jest wy&#322;&#261;czenie aktywno&#347;ci myszy na czas odbudowywa</FONT>nia ekranu.</P>
+<FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void set_background(unsigned char color)</B>;</P>
+<FONT FACE="Times New Roman"><P> Ustala indeks koloru do czyszczenia ekranu. Domy&#347;lnym kolorem jest kolor 0 - czarny. Je&#347;li aplikacja nie zadeklaruje koloru t&#322;a przed otwarciem okna lub zmienia go po otwarciu  to efekty mog&#261; by&#263; po&#322;ow</FONT>iczne.</P>
+<FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void buffering_setup(int yes);</P>
+</B><FONT FACE="Times New Roman"><P> Prze&#322;&#261;czanie buforowania okna w pami&#281;ci. Je&#347;li yes=0 to ka&#380;da operacja rysowania odbywa si&#281; bezpo&#347;rednio na ekranie (chyba &#380;e to niemo&#380;liwe). Je&#347;li buforowanie jest w&#322;&#261;czone to od&#347;wie&#380;enie zawarto&#347;ci ekranu odbywa si&#281; dopiero w momencie wywo&#322;ania funkcji flush_plot().  W obecnej implementacji buforowanie mo&#380;na w&#322;&#261;czy&#263; jedynie przed otwarciem okna graficznego. W &#347;rodowiskach wielookienkowych zmniejsza to ilo&#347;&#263; przypadków kiedy konieczne jest odrysowanie ekranu przez a</FONT>p<FONT FACE="Times New Roman">likacje. W &#347;rodowisku jednoekranowym tryb z buforowaniem mo&#380;e nie wspó&#322;dzia&#322;a&#263; w&#322;a&#347;ciwie z obs&#322;ug&#261; myszy - szczególnie przy cz&#281;stym od&#347;wie&#380;aniu ekranu. Na szcz&#281;&#347;cie rzadko istnieje konieczno&#347;&#263; pisania takich aplikacji.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void shell_setup(char* Title, int Iargc, char* Iargv[]);</P>
+</B><FONT FACE="Times New Roman"><P> Przekazanie parametrów wywo&#322;ania programu (funkcji main) do SYMSHELL'a . Pe&#322;n&#261; list&#281; parametrów rozpoznawan&#261; przez dan&#261; implementacje mo&#380;na uzyska&#263; podaj&#261;c parametr </FONT><I>-h </I>lub<I> -help</I>. Parametr <I>Title </I><FONT FACE="Times New Roman">s&#322;u&#380;y do ustalenia tytu&#322;u okna je&#347;li dana platforma dopuszcza tak&#261; mo&#380;liwo&#347;&#263;. Funkcja ta powinna by&#263; wywo&#322;ywana przed funkcj&#261; init_plot(). Je&#347;li nie zostanie wywo&#322;ana to przyjmowane s&#261; warto&#347;ci domy&#347;lne. </P>
+<P>Akceptowane przez SYMSHELL parametry wywo&#322;ania maj&#261; znormalizowan&#261; posta&#263; :</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><I>-nazwa+ </I> lub<I> -nazwa- </I><FONT FACE="Times New Roman">.Pe&#322;na lista zawiera:</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>-<I>input[+-] </I><FONT FACE="Times New Roman"> -&gt;wy&#322;&#261;czanie odbioru wej&#347;cia. Tylko wersja tekstowa.</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><I>-output[+-]</I><FONT FACE="Times New Roman"> -&gt;wy&#322;&#261;czanie standardowego wyj&#347;cia. Tylko wersja tekstowa</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>-<I>mouse[+-] </I><FONT FACE="Times New Roman">-&gt;prze&#322;&#261;czenie odbioru myszy.</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>-<I>async[+-] </I><FONT FACE="Times New Roman">-&gt;prze&#322;&#261;czenie obs&#322;ugi myszy w tryb </FONT>asynchroniczny. Tylko GRX.</P>
+<FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>-<I><FONT FACE="Times New Roman">buffered[+-] -&gt;prze&#322;&#261;czanie</I> buforowania wyj&#347;cia graficznego.</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>-<I><FONT FACE="Times New Roman">traceenv[+-] -&gt;w&#322;&#261;czenie</I> tekstowego &#347;ledzenia zdarze&#324; (events). Tylko w X11.</P>
+</FONT><P> &#9;-<I>mapped[+-]</I><FONT FACE="Times New Roman"> -&gt;w&#322;&#261;czenie trybu podwójnego zapisu w &#347;rodowiskach okienkowych. Z punktu widzenia aplikacji jest on niezauwa&#380;alny, usprawnia jednak od&#347;wie&#380;anie ekranu zwalniaj&#261;c w wi&#281;kszo&#347;ci przypadków aplikacj&#281; z tego obowi&#261;zku. Jednak ka&#380;da operacja ekranowa jest oko&#322;o dwa razy wolniejsza bowiem odbywa si&#281; jednocze&#347;nie na ekranie i na bufor</FONT>z<FONT FACE="Times New Roman">e w pami&#281;ci.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void init_plot(int a, int b, int ca, int cb);</P>
+</B><P> Uruchomienie trybu graficznego lub semigraficznego lub otwarcie graficznego okna aplikacji.</P>
+<FONT FACE="Times New Roman"><P>a - wymagana szeroko&#347;&#263; ekranu w pikselach, b - wymagana wysoko&#347;&#263; ekranu w pikselach,  </P>
+<P>ca - ilo&#347;&#263;</FONT> dodatkowych kolumn tekstu (w znakach) po prawej stronie okna,</P>
+<FONT FACE="Times New Roman"><P>cb - ilo&#347;&#263; dodatkowych wierszy tekstu (w znakach) u do&#322;u okna.</P>
+<P>Pe&#322;ny wymagany rozmiar ekranu powstaje ze zsumowania tych warto&#347;ci i jest zale&#380;ny od rozmiaru fontu stosowanego przez dan&#261; implementacj&#281;.</P>
+<P>Faktyczny rozmiar okna mo&#380;e by&#263; wi&#281;kszy od wymaganego, szczególnie w implementacjach pe&#322;noekranowych.</P>
+<P>Je&#347;li platforma dopuszcza zmian&#281; rozmiaru okna przez u&#380;ytkownika aplikacji to fakt tej zmiany jest w miar&#281; mo&#380;liwo&#347;ci maskowany przed aplikacj&#261; przez zwielokrotnianie rozmiaru punktu, ale tylko do warto&#347;ci ca&#322;kowitych.</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">Trzeba mie&#263; na uwadze &#380;e czasem okno graficzne nakrywa si&#281; z oknem tekstowym odbieraj&#261;cym standardowe wyj&#347;cie, czasem okno graficzne uniemo&#380;liwia prac&#281; standardowego wyj&#347;cia, czasem (Windows) mo&#380;liwe jest takie zbudowanie aplikacji ze jest ona w ogóle pozbawiona funkcjonalnego standardowego wej&#347;cia/wyj&#347;cia.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void flush_plot();</P>
+</B><FONT FACE="Times New Roman"><P>Uzgodnienie zawarto&#347;ci ekranu  z operacjami graficznymi SYMSHELL'a . Niektóre &#347;rodowiska np X11 czy CURSES wymagaj&#261; stosowania tej funkcji do prawid&#322;owej pracy, w innych jest ona niezb&#281;dna w trybie "buffered".  W celu zachowania przeno&#347;no&#347;ci nie mo&#380;na zaniedbywa&#263; wywo&#322;ywania tej funkcji, najlepiej pod koniec logicznego bloku wywo&#322;a&#324; graficznych. Zbyt cz&#281;ste wywo&#322;ania mog&#261; jednak powodowa&#263; znaczny spadek wydajno&#347;ci aplikacji poniewa&#380; mog&#261; by&#263; kosztowne.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void close_plot(); </P>
+</B><FONT FACE="Times New Roman"><P>Zamkni&#281;cie grafiki lub semigrafiki lub okna graficznego. Funkcj&#281; t&#281; nale&#380;y wywo&#322;ywa&#263; dla przyzwoito&#347;ci na ko&#324;cu programu, jednak prawid&#322;owa implementacja SYMSHELL'a umieszcza j&#261; w kolejce funkcji atexit w trakcie wywo&#322;ania open_plot() co zazwyczaj jest wystarczaj&#261;ce. Wewn&#261;trz funkcji close_plot sprawdzana jest zmienna zadeklarowana jako:</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><B>extern int WB_error_enter_before_clean/* =0 */;</P>
+</B><FONT FACE="Times New Roman"><P>Je&#347;li ma ona warto&#347;&#263; ró&#380;n&#261; od 0 to funkcja interaktywnie prosi u&#380;ytkownika o potwierdzenie. Zmienna ta musi by&#263; gdzie&#347; zdefiniowana w kodzie aplikacji lub nale&#380;y dolinkowa&#263; modu&#322; errorent.c. Funkcj&#281; t&#281; mo&#380;na bezpiecznie wywo&#322;ywa&#263; wielokrotnie, a nawet wywo&#322;ywa&#263;</FONT> <FONT FACE="Times New Roman">j&#261; mimo niepowodzenia funkcji open_plot(). Tylko pierwsze wywo&#322;anie nast&#281;puj&#261;ce po zako&#324;czonym sukcesem otwarciu trybu graficznego wykonuje jakiekolwiek czynno&#347;ci.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><I><U><FONT FACE="Times New Roman"><P>Funkcje odczytuj&#261;ce parametry wy&#347;wietlania:</P>
+</I></U></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>int  screen_height();  </P>
+<P>int  screen_width(); </P>
+</B><FONT FACE="Times New Roman"><P>Ostateczne rozmiary okna po przeliczeniach parametrów funkcji  init_plot() zawieraj&#261;ce tak&#380;e marginesy tekstowe. Pozwalaj&#261; na pozycjonowanie w okolicach prawego dolnego rogu ekranu.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>int  char_height(char znak);</P>
+<P>int  char_width(char znak);</P>
+</B><P>Aktualne rozmiar<FONT FACE="Times New Roman">y znaku w pikselach SYMSHELL'a, potrzebne do pozycjonowania tekstu. Rozmiar czcionki mo&#380;e pozornie male&#263; z punktu widzenia aplikacji, je&#347;li u&#380;ytkownik powi&#281;kszy okno graficzne. Nie nale&#380;y ich wi&#281;c zapami&#281;tywa&#263; pomi&#281;dzy wywo&#322;aniami funkcji input_ready(), g</FONT>et_char(), flush_plot() .</P>
+<FONT FACE="TimesNewRomanPS">
+</FONT><I><U><FONT FACE="Times New Roman"><P>Funkcje do czytania wej&#347;cia:</P>
+</I></U></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>int  input_ready();  </P>
+</B><FONT FACE="Times New Roman"><P> Nieblokuj&#261;ca funkcja sprawdzaj&#261;ca czy jest dost&#281;pne wej&#347;cie. Je&#347;li funkcja zwraca 1 to jest pewno&#347;&#263; &#380;e nast&#281;puj&#261;ce potem wywo&#322;anie funkcji get_char() nie mo&#380;e zastopowa&#263;</FONT> aplikacji.</P>
+<FONT FACE="TimesNewRomanPS">
+</FONT><B><P>int  get_char();    </P>
+</B><FONT FACE="Times New Roman"><P>Funkcja odczytywania znaków sterowania. Znaki '\r' (carret return) , '\b' (bell) i EOF maj&#261; specjalne znaczenie. Funkcja mo&#380;e zwraca&#263; warto&#347;ci wi&#281;ksze od 255 jako kody znaków niestandardowych klawiatury (na razie niezdefiniowane) oraz informacje o wybraniu przez u&#380;ytkownika pozycji z menu (na razie tylko Windows).</P>
+<P>Reakcj&#261; aplikacji na znak EOF powinno by&#263; zako&#324;czenie trybu graficznego, reakcj&#261; na znak '\r' powinna by&#263; odbudowa (odrysowanie) ekranu, a reakcj&#261; na znak '\b' powinno by&#263; wywo&#322;anie funkcji get_mouse_event(...). Je&#347;li aplikacja nie czyta odpowiednio cz&#281;sto wej&#347;cia lub nie zareaguje prawid&#322;owo na '\r' to efektu wizualne mog&#261; by&#263; dziwne. Brak wywo&#322;ania funkcji get_mouse_event(...) mo&#380;e powodowa&#263; utrat&#281; zdarzenia mys</FONT>z<FONT FACE="Times New Roman">y lub powtórne zwrócenie przez funkcj&#281; get_char() znaku '\b'.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>int  get_mouse_event(int* xpos, int* ypos, int* click);</P>
+</B><FONT FACE="Times New Roman"><P>Przepisuje  warto&#347;ci ostatniego zdarzenie myszy na zmienne których adresy pobiera z parametrów wywo&#322;ania. </P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>xpos - adres zmiennej na kt&oacute;r<FONT FACE="Times New Roman">&#261; przepisana zostanie wspó&#322;rz&#281;dna pozioma kursora.</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">ypos - adres zmiennej na któr&#261; przepisana zostanie wspó&#322;rz&#281;dna pionowa kursora.</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">click -&#9;adres zmiennej na któr&#261; przepisana zostanie warto&#347;&#263; stanu przycisków myszy;</P>
+</FONT><P>bit o wadze 1 oznacza przycisk lewy, bi<FONT FACE="Times New Roman">t o wadze 2 przycisk prawy, a bit o wadze 4 &#347;rodkowy.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><I><U><FONT FACE="Times New Roman"><P>Funkcje wyprowadzaj&#261;ce tekst na ekran graficzny:</P>
+</I></U></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void print(int x, int y, char* format,...); </P>
+<P>void printc(int x, int y,</P>
+</B><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><B>unsigned char foreground, unsigned char background,</P>
+</B><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><B>char* format,...);</P>
+</B><P>Funkcje<FONT FACE="Times New Roman"> wyprowadzaj&#261;ce tekst dzia&#322;aj&#261;ce analogicznie do standardowej funkcji printf.</P>
+<P>Parametry x i y oznaczaj&#261; po&#322;o&#380;enie lewego górnego rogu pierwszego znaku; "print" wyprowadza tekst w kolorach domy&#347;lnych - zazwyczaj czarno na bia&#322;ym, "printc" w kolorach o indeksach podanych parametrami "foreground" i "background". Aplikacja nie ma wp&#322;ywu na rozmiar czcionki, mo&#380;e jednak policzy&#263; zawczasu rozmiar tekstu. (W Windows wyniki takich oblicze&#324; s&#261; przybli&#380;one).</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><I><U><FONT FACE="Times New Roman"><P>Funkcje rysuj&#261;ce:</P>
+</I></U></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><P>Zestaw tzw prymityw&oacute;w graficznych. Stos<FONT FACE="Times New Roman">unkowo &#322;atwe by&#322;oby jego rozbudowywanie. Zak&#322;ada si&#281; rysowanie i wype&#322;nianie z poziomu aplikacji z u&#380;yciem  pe&#322;nych kolorów. Ditchering i szrafy mog&#261; zosta&#263; zastosowane przez implementacje SYMSHELL'a w wypadku niedost&#281;pno&#347;ci na urz&#261;dzeniu wyj&#347;ciowym 256 k</FONT>olor&oacute;w.</P>
+<FONT FACE="Times New Roman"><P>Parametr "c" oznacza zawsze indeks koloru, parametry "x*","y*" oznaczaj&#261; wspó&#322;rz&#281;dne ekranowe, parametr "r" promie&#324; okr&#281;gu.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void plot(int x, int y, unsigned  char c); </P>
+</B><FONT FACE="Times New Roman"><P>Wy&#347;wietlenie punktu na ekranie.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void line(int x1,int y1,int x2,int y2,unsigned  char c);</P>
+</B><FONT FACE="Times New Roman"><P>Wy&#347;wietlenie linii od punktu x1y1 do punktu x2y2 .</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void circle(int x, int y, int r, unsigned char c);</P>
+</B><FONT FACE="Times New Roman"><P>Wy&#347;wietlenie okr&#281;gu o promieniu r w kolorze c, o &#347;rodku w punkcie xy oczywi&#347;cie.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void fill_circle(int x, int y, int r, unsigned char c);</P>
+</B><FONT FACE="Times New Roman"><P>Wy&#347;wietla ko&#322;o (pe&#322;ne) o promieniu r  w kolorze c .</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void fill_rect(int x1,int y1, int x2,int y2, unsigned  char c);</P>
+</B><FONT FACE="Times New Roman"><P>Wy&#347;wietla  prostok&#261;t wype&#322;niony kolorem</FONT><B><I> "c" </B></I>o lewym g&oacute;rnym rogu w punkcie<B><I> "x1 y1"</B></I>, a prawym dolnym w punkcie <B><I>"x2 y2"</B></I>.</P>
+<FONT FACE="TimesNewRomanPS">
+<B><P>void fill_poly(int vx,int vy,</P>
+<P>&#9;&#9;const ssh_point points[], int &#9;number,</P>
+<P>&#9;&#9;unsigned  char c);</P>
+</B></FONT><FONT FACE="Times New Roman"><P>Wype&#322;nia kolorem</FONT><B><I> "c"  </B></I><FONT FACE="Times New Roman">wielok&#261;t o </FONT><B><I>"number" </B></I><FONT FACE="Times New Roman">wierzcho&#322;ków zdefiniowanych tablic&#261; punktów </FONT><B><I>"points"</B></I><FONT FACE="Times New Roman"> i przesuni&#281;ty  o wektor </FONT><B><I>"vx","vy"</B></I><FONT FACE="Times New Roman"> w stosunku do &#347;rodka uk&#322;adu wspó&#322;rz&#281;dnych ekranowych. W obecnej wersji dla biblioteki Curses wielok&#261;t nie jest wype&#322;niany!</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void clear_screen();</P>
+</B><FONT FACE="Times New Roman"><P>Czy&#347;ci ekran wype&#322;niaj&#261;c go kolorem ustalonym funkcj&#261;  set_background() .</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+</FONT><I><U><P>Operacje na kolorach:</P>
+</I></U><FONT FACE="TimesNewRomanPS">
+</FONT><B><P>void set_rgb(int color, int r, int g, int b);</P>
+</B><FONT FACE="Times New Roman"><P>Zmienia definicje sk&#322;adowych koloru. Aktualna implementacja przyjmuje  indeksy kolorów w zakresie 0..255 . Wi&#281;ksza ilo&#347;&#263; kolorów mog&#322;aby by&#263; nieprzeno&#347;na. Standardowo SYMSHELL inicjuje sk&#322;adowe kolorów w ci&#261;g&#322;&#261; ska&#322;&#281; barwn&#261; przypominaj&#261;c&#261; skal&#281; temperaturow&#261;. Mo&#380;liwe s&#261; jednak dowolne zmiany o ile umo&#380;liwia je platforma.</P>
+<P>Parametr "color" oznacza indeks koloru, którego sk&#322;adowe RGB maj&#261; by&#263; zmienione. Pozosta&#322;e parametry r,b,g s&#322;u&#380;&#261; do podania warto&#347;ci w zakresach od 0 do 255. Nie nale&#380;y raczej  zmienia&#263; definicji koloru o indeksie 0 (BLACK:RGB=0.0.0) oraz o indeksie 255 (WHITE: RGB=255.255.255). W wypadku braku kolorów na urz&#261;dzeniu wyj&#347;ciowym implementacja SYMSHELL'a stara si&#281; je zasymulowa&#263;, mo&#380;e jednak nie by&#263; w stanie z</FONT>m<FONT FACE="Times New Roman">ieni&#263; definicji kolorów albo wykorzysta&#263; pe&#322;nej informacji. Np na karcie VGA sk&#322;adowe maj&#261; zakresy 6-cio a nie 8-mio bitowe. Obecnie symulacji kolorów dokonuje wersja dla platformy CURSES, a wersja dla Win32 robi to de facto na  bazie domy&#347;lnego=systemowe</FONT>go ditheringu kolor&oacute;w w Windows.</P>
+<FONT FACE="TimesNewRomanPS">
+<P>&nbsp;</P>
+</FONT><B><FONT FACE="Times New Roman"><P ALIGN="CENTER">U&#379;YCIE SYMSHELL'A W APLIKACJACH</P>
+</B></FONT><FONT FACE="TimesNewRomanPS">
+</FONT><FONT FACE="Times New Roman"><P>Poniewa&#380; zestaw funkcji SYMSHELL'a s&#261; jest stosunkowo nieliczny s&#261; one zestawione w pojedyncze pliki &#378;ród&#322;owe. Ogranicza to za&#347;miecanie przestrzeni nazw aplikacji pomocniczymi zmiennymi implementacji SYMSHELL'a i u&#322;atwia ich u&#380;ycie, które polega na umieszczeniu plików nag&#322;ówkowych pakietu w miejscu widocznym dla kompilatora C/C++ i odpowiedniego pliku</FONT><I> symsh*.c</I> lub <I>symsh*.o*</I> w zestawie pli<FONT FACE="Times New Roman">ków projektu. Je&#347;li aplikacja nie definiuje w którym&#347; ze swoich w&#322;asnych plików zmiennej </FONT><B><I>WB_error_enter_before_clean</B></I><FONT FACE="Times New Roman"> nale&#380;y do&#322;&#261;czy&#263; tak&#380;e plik </FONT><I>errorent.c .</P>
+</I><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT><FONT FACE="Times New Roman">W przypadku &#347;rodowiska </FONT><B>X-windows </B><FONT FACE="Times New Roman">nale&#380;y tak&#380;e do&#322;&#261;czy&#263; do projektu plik </FONT><I>wbx11ico.c</I><FONT FACE="Times New Roman"> lub w&#322;asny zgod</FONT>ny z plikiem<I> icon.h </I><FONT FACE="Times New Roman">. Zawiera on dane ikony wy&#347;wietlanej w zast&#281;pstwie zminimalizowanej aplikacji. Prawie dowolny typ grafiki binarnej mo&#380;na przekszta&#322;ci&#263; na format tekstowy za pomoc&#261; programy XV dost&#281;pnego na zasadach licencji GNU na praktycznie ka&#380;d&#261; platform&#261; UNIX'ow&#261;.</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>W przypadku stosowania wersji <I>symshwin.c</I><FONT FACE="Times New Roman"> zadanie jest znacznie bardziej skomplikowane ze wzgl&#281;du na specyficzny i nieprzeno&#347;ny charakter aplikacji dla </FONT><B>okienkowych system&oacute;w Microsoftu</B><FONT FACE="Times New Roman">. Poza do&#322;&#261;czeniem pliku </FONT><I>symshwin.c </I>lub <I>symshwin.obj</I> do <FONT FACE="Times New Roman">projektu aplikacji konieczne jest tak&#380;e zdefiniowanie odpowiednich zasobów aplikacji. Pakiet zawiera wzorcowy plik zasobów o nazwie </FONT><I>symshwin.rc</I> lub analogiczny przystosowany do kreatora zasob&oacute;w z MS DEVELOPER STUDIO o nazwie <I>symshmsc.rc</I><FONT FACE="Times New Roman">. Do&#322;&#261;czenie tego lub analogicznego (patrz dalej) pliku zasobów do projektu jest niezb&#281;dne, &#380;eby aplikacja u&#380;ywaj&#261;ca SYMSHELL'a dla Windows w ogóle otworzy&#322;a okno graficzne! </P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;</FONT>Zalecany spos&oacute;b modyfikacji zasob&oacute;w to skopiowanie odpowiedniego wzorcowego pliku<I> *.rc</I> oraz pliku<I> resources.h </I><FONT FACE="Times New Roman">do katalogu zawieraj&#261;cego pliki &#378;ród&#322;owe aplikacji. Zale&#380;nie od kompilatora mo&#380;e te&#380; okaza&#263; si&#281; konieczne wskazanie &#347;cie&#380;ki do pozosta&#322;ych plików nag&#322;ówkowych SYMSHELL'a w opcjach narz&#281;dzia do modyfikacji zasobów. Nast&#281;pnie nale&#380;y sprawdzi&#263; czy aplikacja jest  budowana i uruchamiana ze standardowym plikiem zasobów. Po przebrni&#281;ciu z sukcesem przez ten etap mo&#380;na przyst&#261;pi&#263; do modyfikacji pliku zasobów na potrzeby konkretnej aplikacji. Mo&#380;na zmienia&#263; nast&#281;puj&#261;ce zasoby:</P>
+</FONT><B><P>Akcelerator </B>- dowolnie, pod <FONT FACE="Times New Roman">warunkiem &#380;e nazwa zasobu b&#281;dzie zgodna z nazw&#261; aplikacji podan&#261; w &#322;a&#324;cuchu IDS_APPNAME.</P>
+</FONT><B><P>Ikona </B><FONT FACE="Times New Roman">- dowolnie, pod warunkiem, &#380;e b&#281;dzie zdefiniowana ikona 16x16 i 32x32, a tak&#380;e, &#380;e nie zostanie zmieniony identyfikator ikony aplikacji - IDI_APPICON.</P>
+</FONT><B><P>Menu </B>- dow<FONT FACE="Times New Roman">olnie, pod warunkiem &#380;e nazwa zasobu b&#281;dzie zgodna z nazw&#261; aplikacji podan&#261; w &#322;a&#324;cuchu IDS_APPNAME. Identyfikatory wybranych pozycji s&#261; przekazywane do aplikacji za po&#347;rednictwem funkcji get_char(), nale&#380;y wi&#281;c uwa&#380;a&#263; by by&#322;y wi&#281;ksze od 255. Kreator zasob</FONT>&oacute;<FONT FACE="Times New Roman">w z MS Visual C++ generuje te warto&#347;ci poczynaj&#261;c od liczby 40004.</P>
+<B><P>Tablica &#322;a&#324;cuchów </B>- mo&#380;e by&#263; dowolnie rozbudowywana, ale przeno&#347;na aplikacja SYMSHELL'a mo&#380;e i musi skorzysta&#263; jedynie z dwóch warto&#347;ci: ISD_APPNAME oraz IDS_DESCRIPTION.</P>
+</FONT><B><P>Informacja o wersji </B><FONT FACE="Times New Roman">- nale&#380;y wype&#322;ni&#263; danymi aplikacji. Sam SYMSHELL na razie nie u&#380;ywa tych danych, niewykluczone jednak &#380;e robi&#261; to narz&#281;dzia systemowe.</P>
+</FONT><FONT FACE="TimesNewRomanPS">
+<P>&nbsp;</P>
+</FONT><B><P ALIGN="CENTER">OBECNY STATUS I PERSPEKTYWY ROZWOJU</P>
+</B><FONT FACE="TimesNewRomanPS">
+<P>&#9;</FONT><FONT FACE="Times New Roman">SYMSHELL zosta&#322; zaprojektowany pocz&#261;tkowo na potrzeby aplikacji pisanych przez autora w Instytucie Studiów Spo&#322;ecznych i Instytucie Botaniki Uniwersytetu Warszawskiego.</P>
+<P>Obecnie za jego pomoc&#261; utworzono ju&#380; kilka aplikacji, które ci&#261;gle s&#261; rozwijane, a wraz z nimi b&#281;d&#261; te&#380; rozwijane implementacje SYMSHELL'a. Pakiet zostanie te&#380; wykorzystany jako narz&#281;dzie pomocnicze w Warsztatach z Programowania Modeli, które po raz pierwszy odb&#281;d&#261; si&#281; w Instytucie Studiów Spo&#322;ecznych w semestrze letnim 1997. B&#281;dzie te&#380; udost&#281;pniony magistrantom Zak&#322;adu Syste</FONT>m<FONT FACE="Times New Roman">atyki Ro&#347;lin realizuj&#261;cym prace o profilu "komputerowy".</P>
+<P>Poza tym planowane jest udost&#281;pnienie publiczne poprzez Internet wersji demo i taniej wersji shareware dla celów edukacyjnych i naukowych. Niezale&#380;nie od tego ka&#380;da polskoj&#281;zyczna (na razie - ze wzgl&#281;du na dokumentacj&#281;) osoba fizyczna mo&#380;e pertraktowa&#263; z autorem na temat zakupu pe&#322;nej imiennej wersji zawieraj&#261;cej kod &#378;ród&#322;owy.</P>
+<P>Kontakt z autorem mo&#380;na uzyska&#263; pod nast&#281;puj&#261;cymi adresami:</P>
+</FONT><FONT FACE="TimesNewRomanPS"><P>&#9;<B>borkowsk@bot.strouw.edu.pl </P>
+</B><P>&#9;<B>borkowsk@samba.iss.uw.edu.pl</P>
+</B></FONT></BODY>
+</HTML>
