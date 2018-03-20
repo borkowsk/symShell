@@ -3353,7 +3353,8 @@ for(i=1;i<largc;i++)
 if(animate)	/* Musi byc wlaczona bitmapa buforujaca */
 	is_buffered=1;/* zeby mozna bylo na nia pisac */
 
-strncpy(window_name,title,sizeof(window_name));// (window_name = title;
+//strncpy(window_name,title,sizeof(window_name));// (window_name = title;
+snprintf(window_name,sizeof(window_name),"%u: %s",getpid(),title);
 strncpy(icon_name,title,sizeof(icon_name));//icon_name = title;
 
 //fprintf(stdout,"\n");
