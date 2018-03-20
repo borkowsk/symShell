@@ -722,8 +722,10 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 		   if(wal3<0) wal3=0;
 		  */
 #ifndef OLD_COLOUR_SCALE
-/*
 		  long wal1,wal2,wal3;
+		  double kat=(M_PI*2)*k/255.;
+/*
+
 		  double kat=(M_PI*2)*k/255.;
 		  //  LONG USED SCALE
 		  wal1=(long)(255*sin(kat*1.22));
