@@ -367,7 +367,7 @@ void	set_brush_rgb(int r,int g,int b)
 
 static HPEN GetMyPen(ssh_color color,int size,int style)
 {
-    assert(color<PALETE_LENGHT);
+	assert(color<PALETE_LENGHT);
 
 	if(size<=0)
 		size=1; // conajmniej grubosc 1
@@ -417,7 +417,7 @@ static HPEN GetMyPen(ssh_color color,int size,int style)
 void	set_pen(ssh_color c,int size,int style)
 /* Ustala aktualny kolor linii za pomoca typu ssh_color */
 {
-	HDC hdc=GetMyHdc();
+	HDC hdc=GetMyHdc();   //TODO Mo¿e wraciæ OK nawet gdy nie ma okna!
 
 	curent_pen=GetMyPen(c,size,style);
     SelectObject(hdc,curent_pen);
