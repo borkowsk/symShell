@@ -678,6 +678,11 @@ void GroundColorMix(double* color, double x, double min, double max)
         return;
     }
 }
+/*
+		  double rgb[3];
+		  GroundColorMix(rgb,(double)k,(double)0,(double)255);
+		  set_rgb(k,rgb[0]*255,rgb[1]*255,rgb[2]*255);
+*/
 
 static void SetScale(void)
 //Wewnetrzna implementacja termicznej skali kolorów 
@@ -716,10 +721,11 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 		   wal3=(long)(255*(-cos(kat*1.1)));
 		   if(wal3<0) wal3=0;
 		  */
-#ifdef OLD_COLOUR_SCALE
+#ifndef OLD_COLOUR_SCALE
+/*
 		  long wal1,wal2,wal3;
 		  double kat=(M_PI*2)*k/255.;
-		  /*  LONG USED SCALE
+		  //  LONG USED SCALE
 		  wal1=(long)(255*sin(kat*1.22));
 		  if(wal1<0) wal1=0;
 
@@ -728,7 +734,19 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 
 		  wal3=(long)(255*(-cos(kat*0.9)));
 		  if(wal3<0) wal3=0;
-		  */
+*/
+		  wal1=(long)(255*sin(kat*1.2)*0.9);
+		  if(wal1<0) wal1=0;
+
+		  wal2=(long)(255*(-cos(kat*0.38+1.25)));
+		  if(wal2<0) wal2=0;
+
+		  wal3=(long)(255*(-cos(kat*0.9)*0.9));
+		  if(wal3<0) wal3=0;
+
+		  set_rgb(k,wal1,wal2,wal3);
+
+/*
 		  wal1=(long)(255*sin(kat*1.2));
 		  if(wal1<0) wal1=0;
 
@@ -739,14 +757,11 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 		  if(wal3<0) wal3=0;
 
 		  set_rgb(k,wal1,wal2,wal3);
+*/
 #else
-/*
+
 		  D_COLOUR pom = GetColour( (double)k,(double)0,(double)255);
 		  set_rgb(k,pom.r*255,pom.g*255,pom.b*255);
-*/
-		  double rgb[3];
-		  GroundColorMix(rgb,(double)k,(double)0,(double)255);
-		  set_rgb(k,rgb[0]*255,rgb[1]*255,rgb[2]*255);
 #endif
 		  
 	  }
