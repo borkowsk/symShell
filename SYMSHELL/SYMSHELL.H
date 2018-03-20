@@ -37,7 +37,8 @@ int  get_char();    	/* Funkcja odczytywania znakow sterowania */
 int  set_char(int);		/* Odeslanie znaku na wejscie - zwraca 0 jesli nie ma miejsca */
 int  get_mouse_event(int* xpos,int* ypos,int* click);/* Funkcja odczytujaca ostatnie zdazenie myszy */
 int  repaint_area(int* x,int* y,int* width,int* height);/* Podaje obszar ktory ma byc odnowiony i zwraca 0 */
-						/* Jesli zwraca -1 to znaczy ze dane juz zostaly odczytane. Zignorowac!*/
+	/* Jesli zwraca -1 to brak danych lub brak implementacji ! Odrysowac calosc. */
+	/* Jesli zwraca -2 to znaczy ze dane juz zostaly odczytane. Nalezy zignorowac. */
 /* PRINTING */
 void print(int x,int y,char* format,...); /* Drukuje w kolorach domyslnych*/
 void printc(int x,int y,
@@ -70,3 +71,16 @@ extern int WB_error_enter_before_clean/* =0 */;
 
 
 #endif
+/********************************************************************/
+/*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
+/*            W O J C I E C H   B O R K O W S K I                   */
+/* Zaklad Systematyki i Geografii Roslin Uniwersytetu Warszawskiego */
+/*  & Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
+/*        WWW:  http://moderato.iss.uw.edu.pl/~borkowsk             */
+/*        MAIL: borkowsk@iss.uw.edu.pl                              */
+/*                               (Don't change or remove this note) */
+/********************************************************************/
+
+
+
+
