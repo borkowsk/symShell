@@ -16,7 +16,7 @@ dzia³aæ lepiej, ale pewnoœci nie ma.
 //int wb_about(const char* window_name);//Z biblioteki albo dostarczona z programem
 
 extern int WB_error_enter_before_clean;/* For controling closing graphics window on error*/
-#include "INCLUDE/platform.h"
+//#include "INCLUDE/platform.h"
 
 #include <windows.h>
 #include <windowsx.h>
@@ -39,8 +39,8 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 #endif
 
 #include "symshwin.h"			// prototypes specific to this application
-#include "_sig_msg.h"			// for compatibility with wb_posix.
-#include "../../symshell.h"		// prototypes of symshell graphix primitives
+//#include "_sig_msg.h"			// for compatibility with wb_posix.
+#include "symshell.h"		// prototypes of symshell graphix primitives
 
 #define MY_WIN_STYLE		      (WS_OVERLAPPEDWINDOW/* | WS_HSCROLL | WS_VSCROLL*/)
 #define MAXWRITE		0xfff0	  //Bezpieczny rozmiar bufora
@@ -367,7 +367,7 @@ void	set_brush_rgb(int r,int g,int b)
 
 static HPEN GetMyPen(ssh_color color,int size,int style)
 {
-	assert(color<PALETE_LENGHT);
+    assert(color<PALETE_LENGHT);
 
 	if(size<=0)
 		size=1; // conajmniej grubosc 1
@@ -417,7 +417,7 @@ static HPEN GetMyPen(ssh_color color,int size,int style)
 void	set_pen(ssh_color c,int size,int style)
 /* Ustala aktualny kolor linii za pomoca typu ssh_color */
 {
-	HDC hdc=GetMyHdc();   //FIXME Mo¿e wraciæ OK nawet gdy nie ma okna!
+	HDC hdc=GetMyHdc();
 
 	curent_pen=GetMyPen(c,size,style);
     SelectObject(hdc,curent_pen);
@@ -1827,15 +1827,15 @@ BOOL InitInstance(HINSTANCE hInstance)
 
 	WB_Hwnd=MyHwnd; //Save to global variable
 
-	//
-	// Call module specific instance initialization functions here.
-	//
+    //
+    // **TODO** Call module specific instance initialization functions here.
+    //
 
     // **INPUT** Initialize the input module.
     if (!InitInput(MyHwnd))
     {
-		return FALSE;
-	}
+        return FALSE;
+    }
 
     return TRUE;                // We succeeded...
 }
@@ -2013,7 +2013,7 @@ LRESULT MsgSysCommand(HWND hwnd, UINT uMessage, WPARAM wparam, LPARAM lparam)
 	switch (GET_WM_COMMAND_ID(wparam,lparam))
     {
         //
-		// Add cases here for application specific command messages.
+        // **TODO** Add cases here for application specific command messages.
         //
 
 		case SC_CLOSE:
