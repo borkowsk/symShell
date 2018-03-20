@@ -5,7 +5,7 @@ static char* Copyright=	"SYMSHELL LIBRARY(c)1997-2014 ;\n"
 /*****************************************************************************************
 * Implementacja najprostrzego interface'u wizualizacyjnego dla MS Windows 32.
 * U¿ywano w of 1997 roku w ró¿nych kompilatorach C++ Borland i Microsoftu oraz w GCC na Windows
-* Ostatnia modyfikacja/Last modification: 15.04.2014
+* Ostatnia modyfikacja/Last modification: 28.10.2014
 UWAGA ProcessMsg u¿ywa teraz zamiast NULL uchwytu okna pobierajac komunikat - to powinno
 dzia³aæ lepiej, ale pewnoœci nie ma.
 ******************************************************************************************/
@@ -27,8 +27,9 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 #include <setjmp.h>
 
 #include "SYMSHELL/symshell.h"		// prototypes of symshell graphix primitives
-#include "symshwin.h"			// prototypes specific to this application
+
 #include "_sig_msg.h"			// for compatibility with wb_posix.
+#include "symshwin.h"			// prototypes specific to this application
 
 #define OLD_COLOUR_SCALE (0)   //Skala kolorów jak na mapie fizycznej
 
