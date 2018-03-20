@@ -34,8 +34,6 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 
 #include "symshwin.h"			// prototypes specific to this application
 
-#include "_sig_msg.h"			// for compatibility with wb_posix.
-
 #include "symshell.h"
 
 #define MY_WIN_STYLE		      (WS_OVERLAPPEDWINDOW/* | WS_HSCROLL | WS_VSCROLL*/)
