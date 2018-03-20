@@ -1,7 +1,7 @@
 /* SYMSHELL.H - SIMPLE PORTABLE GRAPHICS & INPUT INTERFACE for C/C++    */
 /************************************************************************/
-/* designed by W.Borkowski http://www.iss.uw.edu.pl/~borkowsk           */
-/* Last changed: 22.06.2007                                			    */
+/* designed by W.Borkowski http://www.iss.uw.edu.pl/borkowski           */
+/* Last changed: 04.09.2010                                			    */
 
 #ifndef _SYMSHELL_H_
 #define _SYMSHELL_H_
@@ -18,8 +18,15 @@ extern "C" {
 #define SSH_LINE_DOTTED 2
 #define SSH_LINE_DASHED 3
 
+#ifdef __cplusplus 
+const unsigned PALETE_LENGHT=512;
+#else
+#define PALETE_LENGHT (512)
+#endif
+
 /* TYPY */
 typedef struct ssh_point {int x,y;} ssh_point;
+typedef struct ssh_rgb {unsigned char r,g,b;} ssh_rgb;
 typedef unsigned ssh_color; 
 
 /* OTWIERANIE i ZAMYKANIE TRYBU (OKNA) GRAFICZNEGO */
@@ -74,7 +81,7 @@ int  string_width(const char* str);		/* ...potrzebne do jego pozycjonowania */
 #error "print" already defined
 #endif
 
-void printbw(int x,int y,const char* format,...);/* Drukuje w kolorach domyslnych*/
+void printbw(int x,int y,const char* format,...);/* Drukuje czarno na bialym*/
 void printc(int x,int y,
 			ssh_color fore,ssh_color back,
 					   const char* format,...);/* Drukuje w kolorach uzytkownika*/
@@ -140,8 +147,8 @@ inline unsigned get_background(void){return background();}	// Aktualny kolor tla
 /*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
 /*            W O J C I E C H   B O R K O W S K I                   */
 /*    Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
-/*        WWW:  http://moderato.iss.uw.edu.pl/~borkowsk             */
-/*        MAIL: borkowsk@samba.iss.uw.edu.pl                        */
+/*        WWW:  http://www.iss.uw.edu.pl/borkowski/                 */
+/*        MAIL: wborkowsk@uw.edu.pl                                 */
 /*                               (Don't change or remove this note) */
 /********************************************************************/
 
