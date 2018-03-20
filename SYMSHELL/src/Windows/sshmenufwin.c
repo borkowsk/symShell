@@ -13,58 +13,53 @@ extern "C"
 
 extern HWND	WB_Hwnd;//W symshwin.c
 
-ssh_menu_handle ssh_main_menu()
+int ssh_set_window_name(const char* WindowName)
+{
+	return SetWindowText(WB_Hwnd,WindowName);//SetWindowText return TRUE on success!
+}
+
+
+ssh_menu_handle ssh_main_menu()//Daje uchwyt do g³ównego menu
 {
 return	GetMenu(WB_Hwnd);
 }
 
 ssh_menu_handle ssh_sub_menu(
 					ssh_menu_handle hMenu,				
-					unsigned    Position)
+					unsigned    Position)//Daje uchwyt do podmenu wg. pozycji
 {
 return GetSubMenu(hMenu,Position);
 }
 
-unsigned ssh_get_item_position(
+int ssh_get_item_position(
 					 ssh_menu_handle hMenu,
-					 const char* ItemName)
+					 const char* ItemName) //Odnajduje pozycje itemu w jakims menu
 {
-	size_t i,len=strlen(ItemName);
+	size_t len=strlen(ItemName);
 	char* pom=malloc(len+1);
-	int N=GetMenuItemCount(hMenu);
+	int i,N=GetMenuItemCount(hMenu);
 	
 	for(i=0;i<N;i++)
 	{
-		int ret=GetMenuString(hMenu,i,pom,len+1,MF_BYPOSITION);
+		int ret=GetMenuString(hMenu,i,pom,len+1,MF_BYPOSITION); //i ale raczej nie bêdzie ujemne	(UINT vs. size_t?)
 																assert(ret!=0);
 		if(strcmp(ItemName,pom)==0)
 		{
 			free(pom);
-			return i;
+			return i;	
 		}
 	}
 
 	free(pom);
-	return UINT_MAX;
+	return -1;
 }
 
 int	ssh_menu_add_item(
 					ssh_menu_handle hMenu,
 					const char* ItemName,
 					unsigned    Message,
-					unsigned    Flags)
+					unsigned    Flags) //Dodaje item do menu
 {
-/*wchar_t	UniItemName[1024];
-//I tak nie dziala - zostaja krzaczki
-int ret=MultiByteToWideChar(
-	1252,//CP_ACP,			// UINT CodePage,         // code page
-	MB_PRECOMPOSED	,		//DWORD dwFlags,         // character-type options
-	ItemName,				//LPCSTR lpMultiByteStr, // address of string to map
-  strlen(ItemName)+1,		//number of bytes in string
-	UniItemName,			//LPWSTR lpWideCharStr,  // address of wide-character buffer
-	1024					//int cchWideChar        // size of buffer
-);
- */
 if(Flags==0)/* Ma byc domyslnie */
 	Flags=MF_ENABLED;
 //return AppendMenuW(hMenu,Flags,Message,UniItemName);
@@ -76,7 +71,7 @@ int ssh_menu_mark_item(
 					unsigned    Check,
 					unsigned    ItemCommandOrPosition,										
 					unsigned    asPosition
-					   )
+					   ) // Ustawia lub usuwa marker przy itemie
 {
 UINT Flags=0;
 if(Check) Flags|=MF_CHECKED;
@@ -86,7 +81,7 @@ if(asPosition) Flags|=MF_BYPOSITION;
 return  CheckMenuItem(hMenu,ItemCommandOrPosition,Flags)!=0xffffffff;
 }
 
-int ssh_realize_menu(ssh_menu_handle hMenu)
+int ssh_realize_menu(ssh_menu_handle hMenu) //Zapewnia ze menu bedzie wygladac zgodnie z poprzednimi poleceniami
 {
 return DrawMenuBar(WB_Hwnd ); 
 }
