@@ -24,7 +24,7 @@ typedef unsigned ssh_color;
 
 /* OTWIERANIE i ZAMYKANIE TRYBU (OKNA) GRAFICZNEGO */
 /* Operacje konfiguracyjne o dzia³aniu gwarantowanym przed inicjacja */
-void shell_setup(const char* title,int iargc,char* iargv[]);/* Przekazanie parametrow wywolania */
+void shell_setup(const char* title,int iargc,const char* iargv[]);/* Przekazanie parametrow wywolania */
 void buffering_setup(int Yes);			/* Przelaczanie buforowanie okna - moze nie dzialac po inicjacji*/
 void fix_size(int Yes);					/* Czy symulowaæ niezmiennosc rozmiarow okna */
 void set_background(ssh_color c);		/* Ustala index koloru do czyszczenia - moze nie dzialac po inicjacji*/
