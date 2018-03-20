@@ -30,7 +30,7 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 #include "symshwin.h"			// prototypes specific to this application
 #include "_sig_msg.h"			// for compatibility with wb_posix.
 
-#define OLD_COLOUR_SCALE (1)   //Skala kolorów jak na mapie fizycznej
+#define OLD_COLOUR_SCALE (0)   //Skala kolorów jak na mapie fizycznej
 
 #ifdef __MSVC__
 //#pragma warning(disable:4068)
@@ -507,6 +507,16 @@ void set_rgb(ssh_color color,int r,int g,int b)
 		pens[color].size=0;
 		pens[color].style=0;
 	}
+}
+
+ssh_rgb   get_rgb_from(ssh_color c)
+	/* Jakie s¹ ustawienia RGB konkretnego kolorku w palecie */
+{
+	ssh_rgb pom;
+	pom.r=GetRValue(colors[c]);
+	pom.g=GetGValue(colors[c]);
+	pom.b=GetBValue(colors[c]);
+	return pom;
 }
 
 void set_gray(ssh_color shade,int intensity)
@@ -3350,7 +3360,7 @@ fflush(stdout);
 }
 
 /********************************************************************/
-/*                                                   2014-04-15     */
+/*                                                   2014-05-20     */
 /*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
 /*            W O J C I E C H   B O R K O W S K I                   */
 /*                                                                  */
