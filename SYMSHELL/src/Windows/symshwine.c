@@ -24,7 +24,7 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+   
 #include <assert.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -45,7 +45,7 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 #define MY_WIN_STYLE		      (WS_OVERLAPPEDWINDOW/* | WS_HSCROLL | WS_VSCROLL*/)
 #define MAXWRITE		0xfff0	  //Bezpieczny rozmiar bufora
 #define MINUSERCOMMAND  IDM_EXIT  //*Komenda uzytkownika o najnizszym numerze */
-
+#define PALETE_LENGHT   512
 /* FOR OTHER MODULES */
 HINSTANCE	WB_Instance=0;
 HINSTANCE	WB_PrevInstance=0;
@@ -2920,7 +2920,7 @@ int  dump_screen(const char* Filename)
 	return 0; //Czy blad?
 }
 
-void shell_setup(const char* title,int iargc,const char* iargv[])
+void shell_setup(const char* title,int iargc,char* iargv[])
 /* Przekazanie parametrow wywolania */
 {
 int i;
