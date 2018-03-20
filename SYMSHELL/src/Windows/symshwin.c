@@ -1,4 +1,4 @@
-static char* Copyright=	"SYMSHELL LIBRARY(c)1997-2010 ;\n"
+static char* Copyright=	"SYMSHELL LIBRARY(c)1997-2014 ;\n"
 						"By Wojciech Borkowski, Warsaw University\n("
 						__DATE__" - compilation timestamp)\n";
 //Partially based on Borland and Microsoft examples
