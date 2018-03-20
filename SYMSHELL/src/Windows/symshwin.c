@@ -30,7 +30,7 @@ extern int WB_error_enter_before_clean;/* For controling closing graphics window
 #include "symshwin.h"			// prototypes specific to this application
 #include "_sig_msg.h"			// for compatibility with wb_posix.
 
-#define OLD_COLOUR_SCALE (0)   //Skala kolorów jak na mapie fizycznej
+#define OLD_COLOUR_SCALE (1)   //Skala kolorów jak na mapie fizycznej
 
 #ifdef __MSVC__
 //#pragma warning(disable:4068)
@@ -726,7 +726,7 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 		   wal3=(long)(255*(-cos(kat*1.1)));
 		   if(wal3<0) wal3=0;
 		  */
-#ifndef OLD_COLOUR_SCALE
+#if OLD_COLOUR_SCALE != 1
 		  long wal1,wal2,wal3;
 		  double kat=(M_PI*2)*k/255.;
 
