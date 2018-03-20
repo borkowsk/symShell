@@ -1,7 +1,7 @@
 /* SYMSHELL.H - SIMPLE PORTABLE GRAPHICS & INPUT INTERFACE for C/C++    */
 /************************************************************************/
 /* designed by W.Borkowski http://borkowski.iss.uw.edu.pl/              */
-/* Last changed: 04.09.2010                                             */
+
 
 #ifndef _SYMSHELL_H_
 #define _SYMSHELL_H_
