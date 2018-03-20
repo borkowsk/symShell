@@ -624,14 +624,11 @@ D_COLOUR GetColour(double v,double vmin,double vmax)
      * x: the gradiant (beetween 0 and 360)
 	 * min and max: variation of the RGB channels (Move3D 0 -> 1)
 	 http://stackoverflow.com/questions/7139825/colormap-library-for-c-which-converts-a-given-value-into-red-green-and-blue-v
-     */
+	 */
+ /* To siê bezpoœrednio nie nadaje bo ma 360 wartoœci!
 void GroundColorMix(double* color, double x, double min, double max)
 {
-   /*
-    * Red = 0
-    * Green = 1
-    * Blue = 2
-	*/
+   /* Red = 0 Green = 1 Blue = 2	*/
 	double posSlope = (max-min)/60;
     double negSlope = (min-max)/60;
 
@@ -678,11 +675,16 @@ void GroundColorMix(double* color, double x, double min, double max)
         return;
     }
 }
-/*
+
 		  double rgb[3];
 		  GroundColorMix(rgb,(double)k,(double)0,(double)255);
 		  set_rgb(k,rgb[0]*255,rgb[1]*255,rgb[2]*255);
 */
+
+/* DO UWZGLÊDNIENIA TE¯
+http://www.cs.uml.edu/~haim/ColorCenter/ColorCenterColormaps.htm
+*/
+
 
 static void SetScale(void)
 //Wewnetrzna implementacja termicznej skali kolorów 
@@ -724,7 +726,7 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 #ifndef OLD_COLOUR_SCALE
 		  long wal1,wal2,wal3;
 		  double kat=(M_PI*2)*k/255.;
-/*
+
 
 		  double kat=(M_PI*2)*k/255.;
 		  //  LONG USED SCALE
@@ -736,7 +738,9 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 
 		  wal3=(long)(255*(-cos(kat*0.9)));
 		  if(wal3<0) wal3=0;
-*/
+
+		  set_rgb(k,wal1,wal2,wal3);
+/*
 		  wal1=(long)(255*sin(kat*1.2)*0.9);
 		  if(wal1<0) wal1=0;
 
@@ -746,7 +750,7 @@ if(UseGrayScale)//Uzywa skali szarosci tam gdzie normalnie sa kolory
 		  wal3=(long)(255*(-cos(kat*0.9)*0.9));
 		  if(wal3<0) wal3=0;
 
-		  set_rgb(k,wal1,wal2,wal3);
+		  set_rgb(k,wal1,wal2,wal3);  */
 
 /*
 		  wal1=(long)(255*sin(kat*1.2));
