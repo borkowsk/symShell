@@ -1,7 +1,7 @@
 /* Najprostrzy interface wizualizacyjny */
 /* Wyswietla pod X-windows za pomoca biblioteki X11 */
 /* symshx11.c */
-#include "platform.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -11,8 +11,9 @@
 #include <X11/Xlib.h> 
 #include <X11/Xutil.h>
 #include <X11/Xos.h> 
-#include <X11/Xatom.h>   
-
+#include <X11/Xatom.h>  
+ 
+#include "platform.h"
 #include "symshell.h"
 #include "icon.h" 
 
@@ -32,7 +33,7 @@ extern int WB_error_enter_before_clean;
   * saves routine arguments to declare them global; if there were 
   * additional source files, they would be declared extern there */ 
  static Display *display=0; 
- static int screen_num; 
+ static int screen_num=0; 
 
  /* progname is the string by which this program was invoked; this 
   * is global because it is needed in most application functions */ 
@@ -63,16 +64,17 @@ extern int WB_error_enter_before_clean;
  static XWMHints *wm_hints;  
  static XClassHint *class_hints;  
  static XTextProperty windowName, iconName; 
-
+ 
  static int count;  
  static KeySym thekey;		/* ??? */
  static GC gc=0;  		/* Kontekst graficzny */
- static int ResizeFont=0;	/* Czy probuje zmieniac rozmiar fontu */		
- static XFontStruct *font_info=NULL;   /* Aktualny font */
+ static int ResizeFont=0;	/* Czy probuje zmieniac rozmiar fontu */
+ static XFontStruct *font_info=NULL; 
  static unsigned ori_font_width = 8;
  static unsigned ori_font_height = 16;
  static unsigned font_width = 0;
  static unsigned font_height = 0;
+ static unsigned ssh_transparently = 0;
  static char *display_name = NULL; /* Nazwa wyswietlacza - do odczytania */ 
  static int window_size = TOO_SMALL; /* BIG_ENOUGH or TOO_SMALL to display contents */
 
@@ -527,12 +529,30 @@ if(pipe_break)	/* Musi zwrocic EOF */
        case ClientMessage:
 	    {
 	    if(trace)
+		 {
 		 fprintf(stderr," Client message arrived \n ");
-	    }
-	   default:  
-          /* All events selected by StructureNotifyMask  
-           * except ConfigureNotify are thrown away here,  
-           * since nothing is done with them */  
+		 switch(report.xclient.format){
+		 case 8:fprintf(stderr,"->%s\n", report.xclient.data.b);
+			 break;
+		 case 16:fprintf(stderr,"->0x%x\n", report.xclient.data.s[0]);			
+			 break;
+		 case 32:fprintf(stderr,"->0x%lu\n", report.xclient.data.l[0]);			
+			 break;
+		 default:fprintf(stderr,"->Invalid format field %d\n",report.xclient.format );
+			 break;}
+		 }
+	switch(report.xclient.format){
+		 case 8: break;
+		 case 16:if( report.xclient.data.s[0]==0xffff)
+				{pipe_break=1;*buforek=EOF;}
+			 break;
+		 case 32:*buforek=report.xclient.data.l[0];
+			break;
+		 default: break;} 
+	    } break;
+      default: 
+	  if(trace)
+		fprintf(stderr,"Undefined message %d arrived \n ", report.type);
           break;  
        } /* End switch */ 
 
@@ -840,7 +860,7 @@ ini_cb=cb;
     atexit(close_plot);
     if(signal(SIGPIPE,SigPipe)!=SIG_ERR && trace)
 	  fprintf(stderr,"SIGPIPE handler instaled\n");
-    _InitMenuPipe(icon_name);
+    _InitMenuPipe(win, icon_name);
     while(!input_ready()); /* Wait for expose */ 
 
     /* Czysci zeby wprowadzic ustalone tlo */
@@ -926,9 +946,9 @@ int  input_ready()
 if(first_to_read) 
 	return 1;
 
-if(XPending(display)!=0) 	/* Sprawdzenie czy nie cdma zdarzen */
-	{			/*SA JAKIES!*/
-        buforek[0]=NODATA; 	/*Asekuranctwo */
+if(XPending(display)!=0) 	/* Sprawdzenie czy nie ma zdarzen */
+	{			/* SA JAKIES!*/
+        buforek[0]=NODATA; 	/* Asekuranctwo */
 	Read_XInput(); 		/* Przetwarzanie zdarzen */
         if(buforek[0]!=NODATA)	/* Jest cos do zwrocenia jako znak */
            {
@@ -1008,16 +1028,17 @@ unsigned font_height=0;
     len = strlen(bufor);  
 
     /* Get string widths & hight */  
-/*
+    /*
     width1 = XTextWidth(font_info, string1, len1);  
-*/
+    */
+    
     font_height = font_info->ascent + font_info->descent; 
  
-    /* Output text, centered on each line */
- 
-    x*=mulx; /* Multiplicaton of coordinates */
-    y*=muly; /* if window is bigger */
-  
+    
+ /* Multiplicaton of coordinates, if window is bigger */
+    x*=mulx; 
+    y*=muly; 
+   
     ox=x;oy=y;
     CurrForeground=-1;
     XSetForeground(display,gc,Scale[0]);
@@ -1124,24 +1145,22 @@ if(buffered)
 }
 
 void fill_poly(int vx,int vy,
-					const ssh_point points[],int number,
-					unsigned  char c)
+	       const ssh_point points[],int number,
+	       unsigned  char c)
 /* Wypelnia wielokat przesuniety o vx,vy w kolorze c */
 {
 static XPoint _LocalTable[10];
-XPoint* 	LocalPoints=_LocalTable;
+XPoint*       LocalPoints=_LocalTable;
 int i;
 
 if(number<=2)
-		return; /*Nie da sie rysowac 
-		wielokata o dwu punktach lub
-			mniej*/
+    return; /* Nie da sie rysowac wielokata o dwu punktach lub mniej */
 
-if(number>10) /*Jest za duzy.Alokacja*/
-	LocalPoints=calloc(number,sizeof(XPoint));
+if(number>10) /* Jest za duzy.Alokacja */
+    LocalPoints=calloc(number,sizeof(XPoint));
 
 if(LocalPoints==NULL)
-		 {assert("Memory for polygon");return;}
+   {assert("Memory for polygon");return;}
 
 if(c!=CurrForeground)
    { 
@@ -1161,9 +1180,11 @@ for(i=0;i<number;i++)
 if(!animate)
    	XFillPolygon(display, win, gc,
    	LocalPoints,number,Complex,CoordModeOrigin); 
+
 if(buffered)
    	XFillPolygon(display, cont_pixmap, gc,
-   	 LocalPoints,number,Complex,CoordModeOrigin); 
+   	   LocalPoints,number,
+	   Complex,CoordModeOrigin); 
 
 if(number>10) /*Byl duzy*/
 	free(LocalPoints);
