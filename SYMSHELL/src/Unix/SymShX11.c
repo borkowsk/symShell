@@ -211,6 +211,7 @@ if(opened)
     {
     inside_close_plot=1;
     XSync(display,1/*DISCARD EVENTS*/);
+    _CloseMenuPipe();
     if(WB_error_enter_before_clean)
 		{
 		char* kom="(Press ANY KEY to close graphix)";
@@ -523,7 +524,11 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		if(*Bufor==0x3 || *Bufor==0x4)/* User przerwal w oknie X11 */
 			*buforek=EOF;
 	    } break;
-       
+       case ClientMessage:
+	    {
+	    if(trace)
+		 fprintf(stderr," Client message arrived \n ");
+	    }
 	   default:  
           /* All events selected by StructureNotifyMask  
            * except ConfigureNotify are thrown away here,  
@@ -835,7 +840,7 @@ ini_cb=cb;
     atexit(close_plot);
     if(signal(SIGPIPE,SigPipe)!=SIG_ERR && trace)
 	  fprintf(stderr,"SIGPIPE handler instaled\n");
-    
+    _InitMenuPipe(icon_name);
     while(!input_ready()); /* Wait for expose */ 
 
     /* Czysci zeby wprowadzic ustalone tlo */
