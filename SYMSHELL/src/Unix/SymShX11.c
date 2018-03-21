@@ -1,4 +1,3 @@
-
 /* Najprostrzy interface wizualizacyjny */
 /* Wyswietla pod X-windows za pomoca biblioteki X11 */
 /* symshx11.c */
@@ -25,6 +24,7 @@
 #define NODATA '\0'
 
 /* For close_plot() */
+static int opened=0; /* Dla close plot. Zerowane tez gdy "broken-pipe" */
 extern int WB_error_enter_before_clean;
 
  
@@ -75,9 +75,11 @@ extern int WB_error_enter_before_clean;
  static unsigned font_height = 0;
  static char *display_name = NULL; /* Nazwa wyswietlacza - do odczytania */ 
  static int window_size = TOO_SMALL; /* BIG_ENOUGH or TOO_SMALL to display contents */
+
  static struct XRect{
 	int x,y,width,height;
 	} last_repaint_data;
+ static int repaint_flag=0;
 
  static unsigned long Black,White; 
  static Colormap colormap=0;
@@ -86,22 +88,28 @@ extern int WB_error_enter_before_clean;
  static unsigned long Scale[257]; 
  static void SetScale(XColor RGBarray[]);
 
- static char buforek[8]; /* Bufor na znaki z klawiatury - tylko 0 jest przekazywany */
+ static int  buforek[2]; /* Bufor na znaki z klawiatury - tylko 0 jest przekazywany */
  static char bfirst=0;  /* Zmienne na implementacje cykliczna */
  static char blast=0;   /* nie uzywane... */
+
  static char trace=0;
  static int mouse=0;
+
  static struct { int  flags, x, y;unsigned buttons;} 
-     LastMouse={0, 0, 0, 0};
+										LastMouse={0, 0, 0, 0};
+
  static int error_limit=3; /* Limit odeslanych bledow od x-serwera */
  static int error_count=3; /*antylicznik bledow - gdy 0 - wyjscie */
- static pipe_break=0;
  static int DelayAction=0; /* Sterowanie zasypianiem jesli program czeka */
-
-void SigPipe()
+ static int UseGrayScale=0;
+ 
+static int pipe_break=0;
+void SigPipe(int num)
 {
 pipe_break=1;
-signal(SIGPIPE,SIG_IGN);
+opened=0;
+signal(num,SIG_IGN);
+fprintf(stderr,"SYMSHELL GOT A SIGNALL #%d\n",num); 
 }
 
 int mouse_activity(int yes)
@@ -111,6 +119,11 @@ W X11 zawsze jest, ale mozna ja ignorowac */
 int pom=mouse;
 mouse=yes;
 return pom;
+}
+
+unsigned get_background()
+{
+return bacground;
 }
 
 void set_background(unsigned char c)
@@ -130,11 +143,16 @@ if(animate)	/* Musi byc wlaczona bitmapa buforujaca */
 	buffered=1;/* zeby mozna bylo na nia pisac */
 }
 
+unsigned get_buffering()
+{
+return animate;
+}
+
 static void CloseAll()
 {
  if(display==0)
 	{
-	if(trace) printf("Traing to free resources of NULL display!\n");
+	if(trace) fprintf(stderr,"Traing to free resources of NULL display!\n");
 	return;
 	}
 
@@ -157,14 +175,13 @@ if(alloc_cont)
  	{
 	XFreePixmap(display,cont_pixmap);
 	if(trace)
-  		printf("%s %x\n","FREE PIXMAP",cont_pixmap); 
+  		fprintf(stderr,"%s %x\n","FREE PIXMAP",cont_pixmap); 
 	}
 
 XCloseDisplay(display);  
 display=0;
 }
 
-static int opened=0;
 void close_plot()
 /* --------//---------- zamkniecie grafiki/semigrafiki */
 {
@@ -175,13 +192,8 @@ if(opened)
 		char* kom="(Press ANY KEY to close graphix)";
 		/* width,height of Window at this moment */
 		print(screen_width()/2-(strlen(kom)*char_width('X'))/2,screen_height()/2,kom);
-		if(XFlush(display))
-			{
-			fprintf(stderr,"(Can't wait on window %s )\n",window_name);
-			goto CLOSE;
-			}
-			else
-			fprintf(stderr,"(See at waiting window %s )\n",window_name);
+		flush_plot();
+		fprintf(stderr,"(See at window %s )\n",window_name);
 		get_char();
 		WB_error_enter_before_clean=0;
 		}
@@ -312,27 +324,27 @@ static int buffer_empty=1;
 
 XEvent report;  /* Miejsce na odczytywane zdazenia */
 
-if(pipe_break)	/* Musi zwrocic EOF */
-	{
+if(pipe_break)	/* Musi zwrocic EOF */	
 	return 1;
-	}
+
 
  /* Get events, use first to display text and graphics */  
       XNextEvent(display, &report); 
       if(report.xany.send_event==FALSE)
        {
-        switch  (report.type) {  
+       switch  (report.type) {  
+
        case Expose: 
        if(trace)
          printf("EXPOSE: %s #%d x=%d y=%d %dx%d\n",
-		icon_name,
-		report.xexpose.count,
-		report.xexpose.x,
-		report.xexpose.y,
-		report.xexpose.width,
-		report.xexpose.height); 
+			icon_name,
+			report.xexpose.count,
+			report.xexpose.x,
+			report.xexpose.y,
+			report.xexpose.width,
+			report.xexpose.height); 
 
-         if(first==1)
+       if(first==1)
 	    {
 	    /* Pierwszy event typu Exposure jest powielany, */   
 	    /* Zeby zawsze cos bylo do odebrania */ 
@@ -346,38 +358,45 @@ if(pipe_break)	/* Musi zwrocic EOF */
             			 break;  */
          
           /* If window too small to use */  
-          if (window_size == TOO_SMALL)  
+       if(window_size == TOO_SMALL)  
              TooSmall(win, gc, font_info);  
           else 
 	    {  
-             XSetForeground(display, gc, Scale[bacground]);
-	     CurrForeground=-1; 
-    	     XFillRectangle(display,win , gc, 
-		report.xexpose.x,
-		report.xexpose.y,
-		report.xexpose.width,
-		report.xexpose.height);
+            XSetForeground(display, gc, Scale[bacground]);
+			CurrForeground=-1; 
+    
+			XFillRectangle(display,win , gc, 			
+			report.xexpose.x,
+			report.xexpose.y,
+			report.xexpose.width,
+			report.xexpose.height);
 
-	     if( (!buffered) || buffer_empty )
+	   if( repaint_flag==1 || (!buffered) || buffer_empty )
 		{
 		/* SUmuje z marginesem, takz zeby pokrywalo wszytkie expos'y */
 		if(last_repaint_data.x>report.xexpose.x)
 			last_repaint_data.x=report.xexpose.x;
+		
 		if(last_repaint_data.y>report.xexpose.y)
 			last_repaint_data.y=report.xexpose.y;
-		 /* Tu jest chyba zle */
+		
+		/* Tu jest chyba zle */
 		if(last_repaint_data.width<report.xexpose.width)
 			last_repaint_data.width+=report.xexpose.width;
+		
 		if(last_repaint_data.height<report.xexpose.height)
 			last_repaint_data.height+=report.xexpose.height;
-		
-          	/* Set information for main program about refresh screen */
+
+		repaint_flag=1;/* Sa juz dane dla repaint */
+        
+		/* Set information for main program about refresh screen */
 		if(report.xexpose.count == 0 ||  buffer_empty )
 			{
 			if(trace)
 		    		printf("EXPOSE force repaint\n");
 			buforek[0]='\r';
 			buffer_empty=0;
+			
 			}
 		}
 		else
@@ -391,12 +410,14 @@ if(pipe_break)	/* Musi zwrocic EOF */
 			 ); 
 		DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
 		}
-          }  
-          break; 
+       }  
+       break; 
+
        case MappingNotify:
  	   XRefreshKeyboardMapping((XMappingEvent *)&report );
  	   DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
            break;
+
        case ConfigureNotify:  
        	   DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
        	   if(trace)
@@ -410,20 +431,20 @@ if(pipe_break)	/* Musi zwrocic EOF */
 	  if( width== report.xconfigure.width &&
               height== report.xconfigure.height)
 		{
-                if(trace)
-		printf("The same.\n");
+        	if(trace)
+			fprintf(stderr,"The same.\n");
 		break; /* Nic sie nie zmienilo */
 		}
 
           width = report.xconfigure.width;  
           height = report.xconfigure.height;  
 
-          if ((width < size_hints->min_width) ||  
+      if ((width < size_hints->min_width) ||  
                 (height < size_hints->min_height))
 	     {  
              window_size = TOO_SMALL;  
              if(trace)
-	      	printf("To small!\n");
+	      	fprintf(stderr,"To small!\n");
 	     }
           else  
 	     {
@@ -437,15 +458,16 @@ if(pipe_break)	/* Musi zwrocic EOF */
 	     load_font(&font_info,&gc); /* New font - size changed */
 	     
 	     if(buffered)
-		{
+		 {
 	        ResizeBuffer(width,height);
-		buffer_empty=1;
-		}
+			buffer_empty=1;
+		 }
 		
 	     if(trace)
 	     	printf("->%dx%d scale: x=%d:1 y=%d:1 \n",width,height,mulx,muly); 
 	     } 
           break;  
+
        case ButtonPress:
        	    DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */ 
             if(mouse)
@@ -460,20 +482,26 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		    LastMouse.x,LastMouse.y,LastMouse.buttons  );
 		}
 	    break;
+
        case KeyPress:  
 	    {
-	    unsigned KeyCount=XLookupString((XKeyEvent *)&report,buforek,sizeof(buforek),&thekey,0);
+	    char Bufor[8];
+	    unsigned KeyCount=XLookupString((XKeyEvent *)&report,Bufor,sizeof(buforek),&thekey,0);
 	    DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */ 
+	    
+	    *buforek=*Bufor;/* Na zewnatrz widziane w buforku */
+	    
 	    if(KeyCount!=1)
-		 buforek[0]=NODATA;
+		 *buforek=NODATA;
+	    
 	    if(trace)
-		    printf("KeyPress:%c %x \n ",*buforek,(int)(*buforek));
-            if(*buforek==0x3 || *buforek==0x4)
-		{
-		pipe_break=1;/* User przerwal w oknie X11 */
-		}
+		 fprintf(stderr,"KeyPress:%c %x \n ",*Bufor,(int)(*Bufor));
+        
+		if(*Bufor==0x3 || *Bufor==0x4)/* User przerwal w oknie X11 */
+			*buforek=EOF;
 	    } break;
-       default:  
+       
+	   default:  
           /* All events selected by StructureNotifyMask  
            * except ConfigureNotify are thrown away here,  
            * since nothing is done with them */  
@@ -483,6 +511,8 @@ if(pipe_break)	/* Musi zwrocic EOF */
        else
        XSendEvent(display,win,FALSE,  ExposureMask | KeyPressMask |
  	  ButtonPressMask | StructureNotifyMask,&report);    /* Zeby zawsze cos bylo do odebrania */ 
+
+return 0;
 }
  
  static void getGC(win, gc, font_info)  
@@ -581,10 +611,17 @@ for(i=1;i<largc;i++)
 				"\n\t -trace[+/-]"
 				"\n\t -bestfont[+/-] "
 				"\n\t -traceevt[+/-] "
+				"\n\t -gray[+/-] "
 				"\n"); 
 		printf("You can always gracefully break the program sending\n"
 		" the  ^C  or  ^D  key	 to  g_r_a_p_h_i_c_s  w_i_n_d_o_w !\n"
 		"Other methods break the program immediatelly by exit call!\n");		
+		}
+	else
+	if(strncmp(largv[i],"-gray",5)==0)
+		{
+		UseGrayScale=(largv[i][5]=='+')?1:0;
+	        printf("Gray scale is %s\n",(UseGrayScale?"ON":"OFF"));
 		}
 	else
 	if(strncmp(largv[i],"-mapped",7)==0)
@@ -757,6 +794,7 @@ ini_cb=cb;
           largv, largc, size_hints, wm_hints,  
           class_hints);  
    /* } ??? */ 
+
     /* Select event types wanted */  
     XSelectInput(display, win,
 	  ExposureMask | KeyPressMask |
@@ -777,7 +815,7 @@ ini_cb=cb;
 
     opened=1;
     atexit(close_plot);
-   /* signal(SIGPIPE,SigPipe); */
+    signal(SIGPIPE,SigPipe); 
     
     while(!input_ready()); /* Wait for expose */ 
 
@@ -808,7 +846,25 @@ return pom;
 
 int  char_width(char znak)
 {
-int pom=font_width/mulx;
+int width;
+char pom[2];
+pom[0]=znak;pom[1]='\0';
+width=XTextWidth(font_info,pom, 1)/mulx;
+if(width<1)width=1;
+return width;
+}
+
+int  string_height(const char* str)
+/* BARDZO PRYMITYWNIE! */
+/* Aktualne rozmiary lancucha */
+{
+return char_height(*str);
+}
+
+int  string_width(const char* str)
+/* ...potrzebne do jego pozycjonowania */
+{
+int pom=XTextWidth(font_info,str,strlen(str))/mulx;
 if(pom<1)pom=1;
 return pom;
 }
@@ -834,35 +890,62 @@ if(trace)
 error_count=error_limit;	
 }
 
+/* GETTING INPUT */
+/* Za pierwszym razem zwraca '\r'
+zeby zasygnalizowac ze trzeba wyrysowac ekran */
+static int first_to_read=0;
+
+
 
 int  input_ready()
 /* zalezna od platformy funkcja sprawdzajaca czy jest wejscie */
 {
+if(first_to_read) 
+	return 1;
+
 Read_XInput(); /* Sprawdzenie czy nie ma zdarzen */
+
 if(buforek[0]!=NODATA)
 	return 1;
    else
 	return 0;
 }
 
+int  set_char(int c)	
+/* Odeslanie znaku na wejscie - zwraca 0 jesli nie ma miejsca */
+{
+if(first_to_read!=0)/* Nieodebrano */
+		return 0;
+first_to_read=c;
+return 1;
+}
+
 int  get_char()
 /* odczytywanie znakow sterowania */
 {
 int pom;
+
+if(first_to_read!=0)
+	{int pom=first_to_read ;
+	 first_to_read=0;
+	 return pom;}
+
 DelayAction=0;
-if(pipe_break)
+
+if(pipe_break==1)
 	{
 	if(trace)
-		printf("'pipe_break' flag detected in get_char() in '%s'.\n",icon_name);
+		fprintf(stderr,"'pipe_break' flag detected in get_char() in '%s'.\n",icon_name);
 	return EOF;
 	}
+
 /* Fist 10000 times doing fast. Nexts much slower. */
 while(buforek[0]==NODATA)
 	{
 	Read_XInput();
 	if(trace)
 	if(DelayAction%1000==0)
-		printf("%s[%d] %d waiting!\n",icon_name,getpid(),DelayAction);
+		fprintf(stderr,"%s[%d] %d waiting!\n",icon_name,getpid(),DelayAction);
 	sleep(DelayAction/10000);/* Po 10tysiacach obrotow petli wpada w stan czekania */
 	if(++DelayAction>19999)
 		{
@@ -1148,51 +1231,31 @@ if(buffered)
 }
 
 
-void reapaint_area(int* x,int* y,int* width,int* height)
+int repaint_area(int* x,int* y,int* width,int* height)
 {
-*x=last_repaint_data.x/mulx;
-if(*x<0) *x=0;
-if(*x>org_width) *x=org_width;
-*y=last_repaint_data.y/muly;
-if(*y<0) *y=0;
-if(*y>org_height) *y=org_height;
-*width=last_repaint_data.width/mulx;
-if(*x+*width<0) *width=0;
-if(*x+*width>org_width) *width=org_width-*x;
-*height=last_repaint_data.height/muly;
-if(*y+*height <0) *height =0;
-if(*y+*height>org_height) *height =org_height-*y;
-}
+if(repaint_flag==1)
+	{
+	*x=last_repaint_data.x/mulx;
+	if(*x<0) *x=0;
+	if(*x>org_width) *x=org_width;
 
-static void SetScale(XColor RGBarray[])
-{
-int k;
-XColor RGB;
+	*y=last_repaint_data.y/muly;
+	if(*y<0) *y=0;
+	if(*y>org_height) *y=org_height;
 
-RGB.red=0;RGB.green=0;RGB.blue=0;
-for(k=0;k<256;k++)
-   {
-    RGBarray[k]=RGB;
-    }
+	*width=last_repaint_data.width/mulx;
+	if(*x+*width<0) *width=0;
+	if(*x+*width>org_width) *width=org_width-*x;
 
-for(k=0;k<255;k++)
-{
-long wal;
-double kat=(M_PI*2)*k/255.;
-wal=255*sin(kat*1.25);
-if(wal>0)  RGBarray[k].red=wal;
-wal=255*(-sin(kat*0.85));
-if(wal>0)  RGBarray[k].green=wal;
-wal=255*(-cos(kat*1.1));
-if(wal>0)  RGBarray[k].blue=wal;
-}
-
-RGBarray[255].red=0xffff;
-RGBarray[255].green=0xffff;
-RGBarray[255].blue=0xffff;
-
-if(trace)
-	printf("%s\n","SetScale completed");
+	*height=last_repaint_data.height/muly;
+	if(*y+*height <0) *height =0;
+	if(*y+*height>org_height) *height =org_height-*y;
+	repaint_flag=0;
+	
+	return 0;
+	}
+	else
+	return -1;	
 }
 
 int  get_mouse_event(int* xpos,int* ypos,int* click)
@@ -1207,6 +1270,53 @@ if(LastMouse.flags!=0)
 	return 0;
 	}
 return -1;
+}
+
+static void SetScale(XColor RGBarray[])
+{
+unsigned k;
+XColor RGB;
+
+RGB.red=0;RGB.green=0;RGB.blue=0;
+
+for(k=0;k<256;k++)
+    {
+    RGBarray[k]=RGB;
+    }
+
+
+if(UseGrayScale)
+  {
+  for(k=0;k<255;k++)
+    { 
+    long wal=k;
+    /*printf("%u %ul\n",k,wal);*/
+    RGBarray[k].red=wal;
+    RGBarray[k].green=wal;
+    RGBarray[k].blue=wal;
+    }      
+  }
+  else
+  {
+  for(k=0;k<255;k++)
+	{
+	long wal;
+	double kat=(M_PI*2)*k/255.;
+	wal=255*sin(kat*1.25);
+	if(wal>0)  RGBarray[k].red=wal;
+	wal=255*(-sin(kat*0.85));
+	if(wal>0)  RGBarray[k].green=wal;
+	wal=255*(-cos(kat*1.1));
+	if(wal>0)  RGBarray[k].blue=wal;
+	}
+   }
+
+RGBarray[255].red=0xffff;
+RGBarray[255].green=0xffff;
+RGBarray[255].blue=0xffff;
+
+if(trace)
+	printf("%s\n","SetScale completed");
 }
 
 void set_rgb(int color,int r,int g,int b)
