@@ -21,8 +21,8 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 
-#include "../_SSHX11/symshell.h"
-#include "../_SSHX11/icon.h"
+#include "symshell.h"
+#include "icon.h"
 
 //#define CREATE_FULL /* Use extended function for Window creation */
 #define BITMAPDEPTH 1
