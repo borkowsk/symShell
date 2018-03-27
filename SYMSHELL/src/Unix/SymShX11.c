@@ -1,4 +1,4 @@
-
+/* (1997-v1.33821) */
 /* Najprostrzy interface wizualizacyjny */
 /* Wyswietla pod X-windows za pomoca biblioteki X11 */
 /* symshx11.c */
