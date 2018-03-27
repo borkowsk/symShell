@@ -11,7 +11,7 @@
 #include <X11/Xlib.h> 
 #include <X11/Xutil.h>
 #include <X11/Xos.h> 
-#include <X11/Xatom.h>  
+#include <X11/Xatom.h> 
  
 #include "platform.h"
 #include "symshell.h"
@@ -24,50 +24,52 @@
 #define FALSE 0
 #define NODATA '\0'
 
+/* External communication */
+extern int WB_error_enter_before_clean;
+extern int ssh_menu_trace; /* For debuging purposes - external accesible */
+
 /* For close_plot() */
 static int opened=0; /* Dla close plot. Zerowane tez gdy "broken-pipe" */
-extern int WB_error_enter_before_clean;
-
  
 /* These are used as arguments to nearly every Xlib routine, so it 
-  * saves routine arguments to declare them global; if there were 
-  * additional source files, they would be declared extern there */ 
+ * saves routine arguments to declare them global; if there were 
+ * additional source files, they would be declared extern there */ 
  static Display *display=0; 
  static int screen_num=0; 
 
  /* progname is the string by which this program was invoked; this 
-  * is global because it is needed in most application functions */ 
+ * is global because it is needed in most application functions */ 
  static char *progname="WB SYMULATION NAME NOT SET"; 
- static char *window_name = "WB X-window symulation shell";  
- static char *icon_name = "WB-sym-shell";  
+ static char *window_name = "WB X-window symulation shell"; 
+ static char *icon_name = "WB-sym-shell"; 
  static size_t largc=0;		/* Do zapamietania przekazanych przez funkcje */
- static char**  largv=NULL;
- static int 	buffered=0;       /* Czy okno jest buforowane pixmapa */
- static int     animate=0;	  /* Czy odswierznaie tylko gdy flush czy na biezaco */
- static unsigned int mulx=1,muly=1;       /* Multiplication of x & y */
- static unsigned int org_width,org_height;/* Starting Window size */  
+ static char** largv=NULL;
+ static int 	buffered=0;   /* Czy okno jest buforowane pixmapa */
+ static int   animate=0;	 /* Czy odswierznaie tylko gdy flush czy na biezaco */
+ static unsigned int mulx=1,muly=1;    /* Multiplication of x & y */
+ static unsigned int org_width,org_height;/* Starting Window size */ 
  static int ini_a,ini_b,ini_ca,ini_cb;	 /* Konieczne do dzialania 
 						screen_width() i screen_heiht() i zmiany rozmiaru*/
 
- static Window win;  
- static unsigned int width,height;      /* Window size */  
- static int x, y;                       /* Window position */ 
- static unsigned int default_deph = 8;  /* Window deph. 8=>256 colors */ 
- static unsigned int border_width = 4;  /* Four pixels */  
- static unsigned int display_width, display_height;  
- static unsigned int icon_width, icon_height;  
+ static Window win; 
+ static unsigned int width,height;   /* Window size */ 
+ static int x, y;            /* Window position */ 
+ static unsigned int default_deph = 8; /* Window deph. 8=>256 colors */ 
+ static unsigned int border_width = 4; /* Four pixels */ 
+ static unsigned int display_width, display_height; 
+ static unsigned int icon_width, icon_height; 
  static Pixmap icon_pixmap; 
  static unsigned short alloc_cont=0; /* Sygnalizuje ze pixmapa zaostala zaalokowana */ 
  static Pixmap cont_pixmap=0;
- static XSizeHints *size_hints;  
- static XIconSize *size_list;  
- static XWMHints *wm_hints;  
- static XClassHint *class_hints;  
+ static XSizeHints *size_hints; 
+ static XIconSize *size_list; 
+ static XWMHints *wm_hints; 
+ static XClassHint *class_hints; 
  static XTextProperty windowName, iconName; 
  
- static int count;  
+ static int count; 
  static KeySym thekey;		/* ??? */
- static GC gc=0;  		/* Kontekst graficzny */
+ static GC gc=0; 		/* Kontekst graficzny */
  static int ResizeFont=0;	/* Czy probuje zmieniac rozmiar fontu */
  static XFontStruct *font_info=NULL; 
  static unsigned ori_font_width = 8;
@@ -85,19 +87,19 @@ extern int WB_error_enter_before_clean;
 
  static unsigned long Black,White; 
  static Colormap colormap=0;
- static int CurrForeground=-1;      /* Index to last set color */
- static unsigned  bacground=0;      /* Index koloru tla */
+ static int CurrForeground=-1;   /* Index to last set color */
+ static unsigned bacground=0;   /* Index koloru tla */
  static unsigned long Scale[257]; 
  static void SetScale(XColor RGBarray[]);
 
- static int  buforek[2]; /* Bufor na znaki z klawiatury - tylko 0 jest przekazywany */
- static char bfirst=0;  /* Zmienne na implementacje cykliczna */
- static char blast=0;   /* nie uzywane... */
+ static int buforek[2]; /* Bufor na znaki z klawiatury - tylko 0 jest przekazywany */
+ static char bfirst=0; /* Zmienne na implementacje cykliczna */
+ static char blast=0;  /* nie uzywane... */
 
  static char trace=0;
  static int mouse=0;
 
- static struct { int  flags, x, y;unsigned buttons;} 
+ static struct { int flags, x, y;unsigned buttons;} 
 	LastMouse={0, 0, 0, 0};
 
  static int error_limit=3; /* Limit odeslanych bledow od x-serwera */
@@ -105,6 +107,8 @@ extern int WB_error_enter_before_clean;
  static int DelayAction=0; /* Sterowanie zasypianiem jesli program czeka */
  static int UseGrayScale=0;
  static int pipe_break=0;
+
+char* event_name(int code);
 
 void SigPipe(int num)
 {
@@ -160,11 +164,11 @@ static void CloseAll()
 	}
 
  if(font_info){
- 	XUnloadFont(display, font_info->fid);  
+ 	XUnloadFont(display, font_info->fid); 
 	font_info=NULL; }
 
  if(gc!=0){
- 	XFreeGC(display, gc);  
+ 	XFreeGC(display, gc); 
 	gc=0; }
 
 #ifndef __MSDOS__
@@ -180,26 +184,26 @@ if(alloc_cont!=0)
  	{
 	XFreePixmap(display,cont_pixmap);
 	if(trace)
-  		fprintf(stderr,"%s %x\n","FREE PIXMAP",cont_pixmap); 
+ 		fprintf(stderr,"%s %x\n","FREE PIXMAP",cont_pixmap); 
 	cont_pixmap=0;
 	}
 
 if(win!=0)
-    { 
-    if(trace)
-	   fprintf(stderr, "%s %x ","DESTROY WINDOW",win); 
+  { 
+  if(trace)
+	  fprintf(stderr, "%s %x ","DESTROY WINDOW",win); 
 
-    XDestroyWindow(display,win);
-    if(trace)
-	   fprintf(stderr, "-OK\n",win); 
-    win=0;	   	
-    }
+  XDestroyWindow(display,win);
+  if(trace)
+	  fprintf(stderr, "-OK\n",win); 
+  win=0;	  	
+  }
 
 if(trace)
-	   fprintf(stderr,"CLOSE DISPLAY");    
-XCloseDisplay(display);  
+	  fprintf(stderr,"CLOSE DISPLAY");  
+XCloseDisplay(display); 
 if(trace)
-	   fprintf(stderr,"-OK\n");    
+	  fprintf(stderr,"-OK\n");  
 display=0;
 }
 
@@ -210,11 +214,11 @@ void close_plot()
 {
 if(inside_close_plot) return;
 if(opened)
-    {
-    inside_close_plot=1;
-    XSync(display,1/*DISCARD EVENTS*/);
-    _CloseMenuPipe();
-    if(WB_error_enter_before_clean)
+  {
+  inside_close_plot=1;
+  XSync(display,1/*DISCARD EVENTS*/);
+  _CloseMenuPipe();
+  if(WB_error_enter_before_clean)
 		{
 		char* kom="(Press ANY KEY to close graphix)";
 		/* width,height of Window at this moment */
@@ -227,13 +231,13 @@ if(opened)
 		get_char();
 		WB_error_enter_before_clean=0;
 		}
-    CLOSE:		
-    CloseAll();
-    fflush(stderr);
-    fflush(stdout);
-    opened=0;
-    inside_close_plot=0;
-    }
+  CLOSE:		
+  CloseAll();
+  fflush(stderr);
+  fflush(stdout);
+  opened=0;
+  inside_close_plot=0;
+  }
 }
  
 static void ResizeBuffer(unsigned int nwidth,unsigned int nheight)
@@ -246,11 +250,11 @@ static void ResizeBuffer(unsigned int nwidth,unsigned int nheight)
  	}
  	
  if(trace)
-   {
-   fprintf(stderr,"%s %dx%d\n","ALLOC PIXMAP",nwidth,nheight); 
-   /*getchar();*/
-   }
-   
+  {
+  fprintf(stderr,"%s %dx%d\n","ALLOC PIXMAP",nwidth,nheight); 
+  /*getchar();*/
+  }
+  
  cont_pixmap=XCreatePixmap(display,win,nwidth,nheight,default_deph);
  assert(cont_pixmap);
  alloc_cont=1;
@@ -269,92 +273,92 @@ static void ResizeBuffer(unsigned int nwidth,unsigned int nheight)
 	} 	
 }
 
-static void load_font(font_info,gc)  
- XFontStruct **font_info;  
+static void load_font(font_info,gc) 
+ XFontStruct **font_info; 
  GC *gc;
- {  
-    char fontname[256]; 
-    XFontStruct* l_font_info;
-  
-    sprintf(fontname,"%dx%d",ori_font_width,ori_font_height);
-
-  if(!ResizeFont && (*font_info) != NULL ) return;
-
-  /* Load font and get font information structure */  
-  if ((l_font_info = XLoadQueryFont(display,fontname)) == NULL)  
-    {  
-       (void) fprintf( stderr, "%s: Cannot open %s font\n",  
-             progname,fontname);  
-       if( (*font_info)== NULL )
-       		exit( -1 ); /* Nie ma zadnego fontu */
-		else
-		return ;    /* Pozostaje stary */
-    } 
-
-  if( (*font_info) != NULL ) /* Usuwa stary font */
-  	XUnloadFont(display, (*font_info)->fid);
-  (*font_info)=l_font_info;   /* zapamietuje nowy do uzycia */
+ { 
+  char fontname[256]; 
+  XFontStruct* l_font_info;
  
-   /* Specify font in gc */  
-   XSetFont(display, *gc, l_font_info->fid );
+  sprintf(fontname,"%dx%d",ori_font_width,ori_font_height);
 
-  /* Get string widths & hight */  
-    font_width = XTextWidth(*font_info, "X", 1);  
-    font_height = (*font_info)->ascent + (*font_info)->descent;
+ if(!ResizeFont && (*font_info) != NULL ) return;
+
+ /* Load font and get font information structure */ 
+ if ((l_font_info = XLoadQueryFont(display,fontname)) == NULL) 
+  { 
+    (void) fprintf( stderr, "%s: Cannot open %s font\n", 
+       progname,fontname); 
+    if( (*font_info)== NULL )
+    		exit( -1 ); /* Nie ma zadnego fontu */
+		else
+		return ;  /* Pozostaje stary */
+  } 
+
+ if( (*font_info) != NULL ) /* Usuwa stary font */
+ 	XUnloadFont(display, (*font_info)->fid);
+ (*font_info)=l_font_info;  /* zapamietuje nowy do uzycia */
+ 
+  /* Specify font in gc */ 
+  XSetFont(display, *gc, l_font_info->fid );
+
+ /* Get string widths & hight */ 
+  font_width = XTextWidth(*font_info, "X", 1); 
+  font_height = (*font_info)->ascent + (*font_info)->descent;
  
  if(trace)
-   fprintf(stderr,"%s:font %ux%u\n",icon_name,font_width,font_height); 
- }  
+  fprintf(stderr,"%s:font %ux%u\n",icon_name,font_width,font_height); 
+ } 
 
-static void TooSmall(win, gc, font_info)  
-Window win;  
-GC gc;  
-XFontStruct *font_info;  
-{  
+static void TooSmall(win, gc, font_info) 
+Window win; 
+GC gc; 
+XFontStruct *font_info; 
+{ 
  char *string1 = "Too Small";
- int y_offset, x_offset;    
- y_offset = font_info->ascent + 2;  
- x_offset = 2;  
- /* Output text, centered on each line */  
- XDrawString(display, win, gc, x_offset, y_offset, string1,  
-          strlen(string1));  
-}  
+ int y_offset, x_offset;  
+ y_offset = font_info->ascent + 2; 
+ x_offset = 2; 
+ /* Output text, centered on each line */ 
+ XDrawString(display, win, gc, x_offset, y_offset, string1, 
+     strlen(string1)); 
+} 
 
 static int ErrorHandler(Display *xDisplay, XErrorEvent *event)
 {
-    char buf[80];
+  char buf[80];
 
-    fprintf(stderr,"\nReceived X error!\n");
-    fprintf(stderr,"Ecode  : %d", event->error_code);
-    fprintf(stderr,"\tRequest: %d", event->request_code);
-    fprintf(stderr,"\tMinor: %d", event->minor_code);
-    XGetErrorText(xDisplay, event->error_code, buf, 80);
-    fprintf(stderr,"\tEtext : '%s'\n", buf);
-    
-    error_count--;
-    if(!error_count)
-    		exit(event->error_code);	
-    return 0;
+  fprintf(stderr,"\nReceived X error!\n");
+  fprintf(stderr,"Ecode : %d", event->error_code);
+  fprintf(stderr,"\tRequest: %d", event->request_code);
+  fprintf(stderr,"\tMinor: %d", event->minor_code);
+  XGetErrorText(xDisplay, event->error_code, buf, 80);
+  fprintf(stderr,"\tEtext : '%s'\n", buf);
+  
+  error_count--;
+  if(!error_count)
+  		exit(event->error_code);	
+  return 0;
 }
 
  
-static void place_graphics(win, gc,area_x,area_y,area_width, area_height)  
-Window win;  
-GC gc;  
+static void place_graphics(win, gc,area_x,area_y,area_width, area_height) 
+Window win; 
+GC gc; 
 int area_x,area_y;
 unsigned int area_width, area_height;
-{  
-  XCopyArea(display, cont_pixmap, win, gc,
-           area_x/*src_x*/, area_y /*src_y*/, 
-           area_width, area_height,  
-           area_x/*dest_x*/, area_y/*dest_y*/);
+{ 
+ XCopyArea(display, cont_pixmap, win, gc,
+      area_x/*src_x*/, area_y /*src_y*/, 
+      area_width, area_height, 
+      area_x/*dest_x*/, area_y/*dest_y*/);
 }
-  
+ 
 static void Read_XInput()
 {
 static int buffer_empty=1;
 
-XEvent report;  /* Miejsce na odczytywane zdazenia */
+XEvent report; /* Miejsce na odczytywane zdazenia */
 
 if(pipe_break)	/* Musi zwrocic EOF */	
 	{
@@ -362,15 +366,15 @@ if(pipe_break)	/* Musi zwrocic EOF */
 	return ;
 	}
 	
- /* Get events, use first to display text and graphics */  
+ /* Get events, use first to display text and graphics */ 
+  
+  XNextEvent(display, &report); 
     
-    XNextEvent(display, &report); 
-        
-    switch  (report.type) {  
+  switch (report.type) { 
 
-    case Expose: 
-       if(trace)
-         fprintf(stderr,"EXPOSE: %s #%d x=%d y=%d %dx%d\n",
+  case Expose: 
+    if(trace)
+     fprintf(stderr,"EXPOSE: %s #%d x=%d y=%d %dx%d\n",
 			icon_name,
 			report.xexpose.count,
 			report.xexpose.x,
@@ -378,26 +382,26 @@ if(pipe_break)	/* Musi zwrocic EOF */
 			report.xexpose.width,
 			report.xexpose.height); 
 
-          /* Unless this is the last contiguous expose,  
-           * don't draw the window */  
-	  /* if (!buffered && report.xexpose.count != 0)  
-            			 break;  */
-         
-          /* If window too small to use */  
-       if(window_size == TOO_SMALL)  
-             TooSmall(win, gc, font_info);  
-          else 
-	    {  
-            XSetForeground(display, gc, Scale[bacground]);
+     /* Unless this is the last contiguous expose, 
+      * don't draw the window */ 
+	 /* if (!buffered && report.xexpose.count != 0) 
+      			 break; */
+     
+     /* If window too small to use */ 
+    if(window_size == TOO_SMALL) 
+       TooSmall(win, gc, font_info); 
+     else 
+	  { 
+      XSetForeground(display, gc, Scale[bacground]);
 			CurrForeground=-1; 
-    
+  
 			XFillRectangle(display,win , gc, 			
 			report.xexpose.x,
 			report.xexpose.y,
 			report.xexpose.width,
 			report.xexpose.height);
 
-	   if( repaint_flag==1 || (!buffered) || buffer_empty )
+	  if( repaint_flag==1 || (!buffered) || buffer_empty )
 		{
 		/* SUmuje z marginesem, takz zeby pokrywalo wszytkie expos'y */
 		if(last_repaint_data.x>report.xexpose.x)
@@ -414,12 +418,12 @@ if(pipe_break)	/* Musi zwrocic EOF */
 			last_repaint_data.height+=report.xexpose.height;
 
 		repaint_flag=1;/* Sa juz dane dla repaint */
-        
+    
 		/* Set information for main program about refresh screen */
-		if(report.xexpose.count == 0 ||  buffer_empty )
+		if(report.xexpose.count == 0 || buffer_empty )
 			{
 			if(trace)
-		    		fprintf(stderr,"EXPOSE force repaint\n");
+		  		fprintf(stderr,"EXPOSE force repaint\n");
 			buforek[0]='\r';
 			buffer_empty=0;
 			
@@ -427,76 +431,76 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		}
 		else
 		{
-           	/* Refresh from pixmap buffer */ 
+      	/* Refresh from pixmap buffer */ 
 		if(trace)
-		    fprintf(stderr,"EXPOSE DOING BITBLT\n");
-                place_graphics(win, gc ,
+		  fprintf(stderr,"EXPOSE DOING BITBLT\n");
+        place_graphics(win, gc ,
 			report.xexpose.x,report.xexpose.y,
 			report.xexpose.width,report.xexpose.height
 			 ); 
 		DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
 		}
-       }  
-       break; 
+    } 
+    break; 
 
-       case MappingNotify:
- 	   XRefreshKeyboardMapping((XMappingEvent *)&report );
- 	   DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
-           break;
+    case MappingNotify:
+ 	  XRefreshKeyboardMapping((XMappingEvent *)&report );
+ 	  DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
+      break;
 
-       case ConfigureNotify:  
-       	   DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
-       	   if(trace)
-          	fprintf(stderr,"CONFIGURE: %s=%dx%d scale: x=%d:1 y=%d:1 ",
+    case ConfigureNotify: 
+    	  DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
+    	  if(trace)
+     	fprintf(stderr,"CONFIGURE: %s=%dx%d scale: x=%d:1 y=%d:1 ",
 			icon_name,
 			width,height,mulx,muly);
-	   
-          /* Window has been resized; change width  
-           * and height for next Expose */
+	  
+     /* Window has been resized; change width 
+      * and height for next Expose */
 
-	  if( width== report.xconfigure.width &&
-              height== report.xconfigure.height)
+	 if( width== report.xconfigure.width &&
+       height== report.xconfigure.height)
 		{
-        	if(trace)
+    	if(trace)
 			fprintf(stderr,"The same.\n");
 		break; /* Nic sie nie zmienilo */
 		}
 
-          width = report.xconfigure.width;  
-          height = report.xconfigure.height;  
+     width = report.xconfigure.width; 
+     height = report.xconfigure.height; 
 
-      if ((width < size_hints->min_width) ||  
-                (height < size_hints->min_height))
-	     {  
-             window_size = TOO_SMALL;  
-             if(trace)
-	      	fprintf(stderr,"To small!\n");
-	     }
-          else  
-	     {
-             window_size = BIG_ENOUGH; 
-	     /*mulx=width/org_width; STARA WERSJA
-	     muly=height/org_height;*/
-	     
-	     mulx=(width-ini_ca*font_width)/ini_a;
-	     muly=(height-ini_cb*font_height)/ini_b;
-	     
-	     load_font(&font_info,&gc); /* New font - size changed */
-	     
-	     if(buffered)
+   if ((width < size_hints->min_width) || 
+        (height < size_hints->min_height))
+	   { 
+       window_size = TOO_SMALL; 
+       if(trace)
+	   	fprintf(stderr,"To small!\n");
+	   }
+     else 
+	   {
+       window_size = BIG_ENOUGH; 
+	   /*mulx=width/org_width; STARA WERSJA
+	   muly=height/org_height;*/
+	   
+	   mulx=(width-ini_ca*font_width)/ini_a;
+	   muly=(height-ini_cb*font_height)/ini_b;
+	   
+	   load_font(&font_info,&gc); /* New font - size changed */
+	   
+	   if(buffered)
 		 {
-	        ResizeBuffer(width,height);
+	    ResizeBuffer(width,height);
 			buffer_empty=1;
 		 }
 		
-	     if(trace)
-	     	fprintf(stderr,"->%dx%d scale: x=%d:1 y=%d:1 \n",width,height,mulx,muly); 
-	     } 
-          break;  
+	   if(trace)
+	   	fprintf(stderr,"->%dx%d scale: x=%d:1 y=%d:1 \n",width,height,mulx,muly); 
+	   } 
+     break; 
 
-       case ButtonPress:
-       	    DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */ 
-            if(mouse)
+    case ButtonPress:
+    	  DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */ 
+      if(mouse)
 		{ 		
 		buforek[0]='\b';
 		LastMouse.flags=1;
@@ -504,33 +508,34 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		LastMouse.y=report.xbutton.y;
 		LastMouse.buttons=report.xbutton.button;
 		if(trace)
-		    fprintf(stderr,"ButtonPress:x=%d y=%d b=X0%x\n",
-		    LastMouse.x,LastMouse.y,LastMouse.buttons  );
+		  fprintf(stderr,"ButtonPress:x=%d y=%d b=X0%x\n",
+		  LastMouse.x,LastMouse.y,LastMouse.buttons );
 		}
-	    break;
+	  break;
 
-       case KeyPress:  
-	    {
-	    char Bufor[8];
-	    unsigned KeyCount=XLookupString((XKeyEvent *)&report,Bufor,sizeof(buforek),&thekey,0);
-	    DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */ 
-	    
-	    *buforek=*Bufor;/* Na zewnatrz widziane w buforku */
-	    
-	    if(KeyCount!=1)
+    case KeyPress: 
+	  {
+	  char Bufor[8];
+	  unsigned KeyCount=XLookupString((XKeyEvent *)&report,Bufor,sizeof(buforek),&thekey,0);
+	  DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */ 
+	  
+	  *buforek=*Bufor;/* Na zewnatrz widziane w buforku */
+	  
+	  if(KeyCount!=1)
 		 *buforek=NODATA;
-	    
-	    if(trace)
+	  
+	  if(trace)
 		 fprintf(stderr,"KeyPress:%c %x \n ",*Bufor,(int)(*Bufor));
-        
+    
 		if(*Bufor==0x3 || *Bufor==0x4)/* User przerwal w oknie X11 */
 			*buforek=EOF;
-	    } break;
-       case ClientMessage:
-	    {
-	    if(trace)
+	  } break;
+	  
+    case ClientMessage:
+	  {
+	  if(trace)
 		 {
-		 fprintf(stderr," Client message arrived \n ");
+		 fprintf(stderr," Client message arrived ");
 		 switch(report.xclient.format){
 		 case 8:fprintf(stderr,"->%s\n", report.xclient.data.b);
 			 break;
@@ -541,99 +546,102 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		 default:fprintf(stderr,"->Invalid format field %d\n",report.xclient.format );
 			 break;}
 		 }
-	switch(report.xclient.format){
+	  switch(report.xclient.format){
 		 case 8: break;
-		 case 16:if( report.xclient.data.s[0]==0xffff)
+		 case 16:if( report.xclient.data.s[0]==(short)0xffff)
 				{pipe_break=1;*buforek=EOF;}
 			 break;
 		 case 32:*buforek=report.xclient.data.l[0];
 			break;
 		 default: break;} 
-	    } break;
-      default: 
-	  if(trace)
-		fprintf(stderr,"Undefined message %d arrived \n ", report.type);
-          break;  
-       } /* End switch */ 
+	  } break;
+	  
+   default: 
+	 if(trace)
+		fprintf(stderr,"Message %d=\"%s\" arrived but ignored \n ", 
+		report.type,event_name(report.type) );
+     break;
+      
+    } /* End switch */ 
 
 }
  
- static void getGC(win, gc, font_info)  
- Window win;  
- GC *gc;  
- XFontStruct *font_info;  
+ static void getGC(win, gc, font_info) 
+ Window win; 
+ GC *gc; 
+ XFontStruct *font_info; 
  { 
-    XColor pom,Array[256]; 
-    unsigned long valuemask = 0,i; /* Ignore XGCvalues and  
-                          * use defaults */  
-    XGCValues values;  
-    unsigned int line_width = 6;  
-    int line_style = LineOnOffDash;  
-    int cap_style = CapRound;  
-    int join_style = JoinRound;  
-    int dash_offset = 0;  
-    static char dash_list[] = {12, 24};  
-    int list_length = 2;  
-    
-    /* Create default Graphics Context */  
-    *gc = XCreateGC(display, win, valuemask, &values);  
-   
-    /* Specify black foreground since default window background  
-     * is white and default foreground is undefined */
-    Black=BlackPixel(display,screen_num); 
-    White=WhitePixel(display,screen_num);  
-    XSetForeground(display, *gc, Black);  
-    
-    /* Set line attributes */  
-    XSetLineAttributes(display, *gc, line_width, line_style,  
-          cap_style, join_style);  
-    /* Set dashes */  
+  XColor pom,Array[256]; 
+  unsigned long valuemask = 0,i; /* Ignore XGCvalues and 
+             * use defaults */ 
+  XGCValues values; 
+  unsigned int line_width = 6; 
+  int line_style = LineOnOffDash; 
+  int cap_style = CapRound; 
+  int join_style = JoinRound; 
+  int dash_offset = 0; 
+  static char dash_list[] = {12, 24}; 
+  int list_length = 2; 
+  
+  /* Create default Graphics Context */ 
+  *gc = XCreateGC(display, win, valuemask, &values); 
+  
+  /* Specify black foreground since default window background 
+   * is white and default foreground is undefined */
+  Black=BlackPixel(display,screen_num); 
+  White=WhitePixel(display,screen_num); 
+  XSetForeground(display, *gc, Black); 
+  
+  /* Set line attributes */ 
+  XSetLineAttributes(display, *gc, line_width, line_style, 
+     cap_style, join_style); 
+  /* Set dashes */ 
 
-    /*
-	XSetDashes(display, *gc, dash_offset, dash_list, list_length);  
-     */
-     
-    /* Set Color scale */
-    Scale[0]=BlackPixel(display,screen_num); 
-    Scale[255]=WhitePixel(display,screen_num);  
-    
+  /*
+	XSetDashes(display, *gc, dash_offset, dash_list, list_length); 
+   */
+   
+  /* Set Color scale */
+  Scale[0]=BlackPixel(display,screen_num); 
+  Scale[255]=WhitePixel(display,screen_num); 
+  
 #ifdef __MSDOS__
-    colormap=XDefaultColormap(display,screen_num); /* W emulacji nie ma map */
+  colormap=XDefaultColormap(display,screen_num); /* W emulacji nie ma map */
 #else
-    colormap=XCreateColormap(display,win,DefaultVisual(display,screen_num),AllocNone);
+  colormap=XCreateColormap(display,win,DefaultVisual(display,screen_num),AllocNone);
 #endif
 
-    XSetWindowColormap(display,win,colormap);
+  XSetWindowColormap(display,win,colormap);
 
-    pom.red=pom.green=pom.blue=0;
-    XAllocColor(display,colormap,&pom);
-    Black=pom.pixel;
-    Scale[0]=pom.pixel;
-    XSetForeground(display, *gc, Black); 
-   /*fprintf(stderr,"BLACK %u\n",Black);*/
+  pom.red=pom.green=pom.blue=0;
+  XAllocColor(display,colormap,&pom);
+  Black=pom.pixel;
+  Scale[0]=pom.pixel;
+  XSetForeground(display, *gc, Black); 
+  /*fprintf(stderr,"BLACK %u\n",Black);*/
 	
-    pom.red=pom.green=pom.blue=0xffff;
-    XAllocColor(display,colormap,&pom);
-    White=pom.pixel;
-    Scale[255]=pom.pixel;
-    XSetBackground(display, *gc, White); 
-    /*fprintf(stderr,"WHITE %u\n",White);*/
+  pom.red=pom.green=pom.blue=0xffff;
+  XAllocColor(display,colormap,&pom);
+  White=pom.pixel;
+  Scale[255]=pom.pixel;
+  XSetBackground(display, *gc, White); 
+  /*fprintf(stderr,"WHITE %u\n",White);*/
 
-    SetScale(Array);	
-    for(i=1;i<255;i++)
+  SetScale(Array);	
+  for(i=1;i<255;i++)
 	{
 	pom=Array[i];
 	
 	pom.red*=256;
-        pom.blue*=256;
-        pom.green*=256;
+    pom.blue*=256;
+    pom.green*=256;
 	
 	XAllocColor(display,colormap,&pom);
 	
 	Scale[i]=pom.pixel;	
 	}
-     XInstallColormap(display,colormap);
- }  
+   XInstallColormap(display,colormap);
+ } 
 
 
 void shell_setup(char* title,int iargc,char* iargv[])
@@ -643,8 +651,8 @@ int i;
 largc=iargc;
 largv=iargv;
 progname=largv[0]; 
-window_name = title;  
-icon_name = title;  
+window_name = title; 
+icon_name = title; 
 for(i=1;i<largc;i++)
 	{
 	if(strncmp(largv[i],"-h",2)==0)
@@ -657,20 +665,20 @@ for(i=1;i<largc;i++)
 				"\n\t -gray[+/-] "
 				"\n"); 
 		fprintf(stderr,"You can always gracefully break the program sending\n"
-		" the  ^C  or  ^D  key	 to  g_r_a_p_h_i_c_s  w_i_n_d_o_w !\n"
+		" the ^C or ^D key	 to g_r_a_p_h_i_c_s w_i_n_d_o_w !\n"
 		"Other methods break the program immediatelly by exit call!\n");		
 		}
 	else
 	if(strncmp(largv[i],"-gray",5)==0)
 		{
 		UseGrayScale=(largv[i][5]=='+')?1:0;
-	        fprintf(stderr,"Gray scale is %s\n",(UseGrayScale?"ON":"OFF"));
+	    fprintf(stderr,"Gray scale is %s\n",(UseGrayScale?"ON":"OFF"));
 		}
 	else
 	if(strncmp(largv[i],"-mapped",7)==0)
 		{
 		buffered=(largv[i][7]=='+')?1:0;
-	        fprintf(stderr,"Double mapping is %s\n",(buffered?"ON":"OFF"));
+	    fprintf(stderr,"Double mapping is %s\n",(buffered?"ON":"OFF"));
 		/* Jesli user chec tryb mapowania to nie bedziemy */
 		animate=0; /* animowac */
 		}
@@ -678,7 +686,7 @@ for(i=1;i<largc;i++)
 	if(strncmp(largv[i],"-buffered",9)==0)
 		{
 		animate=(largv[i][9]=='+')?1:0;
-	        fprintf(stderr,"Buffered is %s\n",(animate?"ON":"OFF"));
+	    fprintf(stderr,"Buffered is %s\n",(animate?"ON":"OFF"));
 		/* Musi byc wlaczona bitmapa buforujaca */
 		buffered=animate;/* zeby mozna bylo na nia pisac */
 		}
@@ -686,13 +694,19 @@ for(i=1;i<largc;i++)
 	if(strncmp(largv[i],"-bestfont",9)==0)
 		{
 		ResizeFont=(largv[i][9]=='+')?1:0;
-	        fprintf(stderr,"Search best font is %s\n",(ResizeFont?"ON":"OFF"));
+	    fprintf(stderr,"Search best font is %s\n",(ResizeFont?"ON":"OFF"));
 		}
 	else
 	if(strncmp(largv[i],"-traceevt",9)==0)
 		{
 		trace=(largv[i][9]=='+')?1:0;
-	        fprintf(stderr,"Trace events is %s\n",(trace?"ON":"OFF"));
+	    fprintf(stderr,"Trace events is %s\n",(trace?"ON":"OFF"));
+		}
+	else
+	if(strncmp(largv[i],"-tracemen",9)==0)
+		{
+		ssh_menu_trace=(largv[i][9]=='+')?1:0;
+	    fprintf(stderr,"Trace menu is %s\n",(trace?"ON":"OFF"));
 		}
 	}
 }
@@ -703,192 +717,192 @@ int init_plot(int a,int b,int ca,int cb)
  a,b to wymagane rozmiary ekranu */
 {
 int* disp_depht;
-int  disp_depht_num=0,i;
+int disp_depht_num=0,i;
 ini_a=a;
 ini_b=b;
 ini_ca=ca;
 ini_cb=cb;
 
-    if (!(size_hints = XAllocSizeHints())) {  
-       fprintf(stderr, "%s: failure allocating memory", progname);  
-         exit(-2);  return 0;
-    }  
-    if (!(wm_hints = XAllocWMHints())) {  
-       fprintf(stderr, "%s: failure allocating memory", progname);  
-         exit(-2);  return 0;
-    }  
-    if (!(class_hints = XAllocClassHint())) {  
-       fprintf(stderr, "%s: failure allocating memory", progname);  
-         exit(-2); return 0; 
-    } 
+  if (!(size_hints = XAllocSizeHints())) { 
+    fprintf(stderr, "%s: failure allocating memory", progname); 
+     exit(-2); return 0;
+  } 
+  if (!(wm_hints = XAllocWMHints())) { 
+    fprintf(stderr, "%s: failure allocating memory", progname); 
+     exit(-2); return 0;
+  } 
+  if (!(class_hints = XAllocClassHint())) { 
+    fprintf(stderr, "%s: failure allocating memory", progname); 
+     exit(-2); return 0; 
+  } 
  
-    /* Connect to X server */  
-    if ( (display=XOpenDisplay(display_name)) == NULL )  
-    {  
-       fprintf( stderr, "'%s': cannot connect to X server '%s'\n",  
-             progname, XDisplayName(display_name));  
-       exit( -1 );  return 0;
-    } 
+  /* Connect to X server */ 
+  if ( (display=XOpenDisplay(display_name)) == NULL ) 
+  { 
+    fprintf( stderr, "'%s': cannot connect to X server '%s'\n", 
+       progname, XDisplayName(display_name)); 
+    exit( -1 ); return 0;
+  } 
  
-    /* Get screen size from display structure macro */  
-    screen_num = DefaultScreen(display);  
-    display_width = DisplayWidth(display, screen_num);  
-    display_height = DisplayHeight(display, screen_num);  
+  /* Get screen size from display structure macro */ 
+  screen_num = DefaultScreen(display); 
+  display_width = DisplayWidth(display, screen_num); 
+  display_height = DisplayHeight(display, screen_num); 
 	disp_depht = XListDepths(display, screen_num, &disp_depht_num);
-    if(trace)
-    	{
-    	fprintf(stderr,"Available display depths:");
-    	for(i=0;i<disp_depht_num;i++)
-    		fprintf(stderr,"%d ",disp_depht[i]);
-    	putchar('\n');	
-    	}	
-    			
-    /* Search for depht */
-    for(i=0;i<disp_depht_num;i++)
-    	if(disp_depht[i]>=default_deph)
-    		{
-    		default_deph=disp_depht[i];/*Pierwszy >= wymaganemu */
-    		break;
-    		}
-   if(trace)
-   	fprintf(stderr,"Select depth %d\n",default_deph);
-   	
-    /* Note that in a real application, x and y would default  
-     * to 0 but would be settable from the command line or  
-     * resource database */ 
-   org_width = width = a+ca*ori_font_width; 
-   org_height = height = b+cb*ori_font_height;  
-   x=y=0;
-   fprintf(stderr,"%s=%dx%d\n",icon_name,width,height);
+  if(trace)
+  	{
+  	fprintf(stderr,"Available display depths:");
+  	for(i=0;i<disp_depht_num;i++)
+  		fprintf(stderr,"%d ",disp_depht[i]);
+  	putchar('\n');	
+  	}	
+  			
+  /* Search for depht */
+  for(i=0;i<disp_depht_num;i++)
+  	if(disp_depht[i]>=default_deph)
+  		{
+  		default_deph=disp_depht[i];/*Pierwszy >= wymaganemu */
+  		break;
+  		}
+  if(trace)
+  	fprintf(stderr,"Select depth %d\n",default_deph);
+  	
+  /* Note that in a real application, x and y would default 
+   * to 0 but would be settable from the command line or 
+   * resource database */ 
+  org_width = width = a+ca*ori_font_width; 
+  org_height = height = b+cb*ori_font_height; 
+  x=y=0;
+  fprintf(stderr,"%s=%dx%d\n",icon_name,width,height);
 
-   size_hints->min_width = width;   /* Startup width/haight */
-   size_hints->min_height = height; /* are minimal */ 
+  size_hints->min_width = width;  /* Startup width/haight */
+  size_hints->min_height = height; /* are minimal */ 
 
- /* Create opaque window */  
+ /* Create opaque window */ 
  #ifdef CREATE_FULL 
-   win = XCreateWindow(display, 
-   		RootWindow(display,screen_num),  
-          	x, y, width, height, border_width,
-	  	default_deph /* Window deph */,
-          	InputOutput /*WindowClass*/,
-	  	CopyFromParent /* Visual */,
-	  	0	/* Valuemask */,
-	  	0     /* Atributes */
+  win = XCreateWindow(display, 
+  		RootWindow(display,screen_num), 
+     	x, y, width, height, border_width,
+	 	default_deph /* Window deph */,
+     	InputOutput /*WindowClass*/,
+	 	CopyFromParent /* Visual */,
+	 	0	/* Valuemask */,
+	 	0   /* Atributes */
 	 	);
  #else
-    win = XCreateSimpleWindow(display, 
-    			RootWindow(display,screen_num),  
-          		x, y, width, height, border_width, 
-          		BlackPixel(display, screen_num), 
-          		WhitePixel(display,screen_num)
-          		); 
+  win = XCreateSimpleWindow(display, 
+  			RootWindow(display,screen_num), 
+     		x, y, width, height, border_width, 
+     		BlackPixel(display, screen_num), 
+     		WhitePixel(display,screen_num)
+     		); 
  #endif
-  
-    window_size = BIG_ENOUGH ;
-    /* Get available icon sizes from window manager */  
-    if (XGetIconSizes(display, RootWindow(display,screen_num),&size_list, &count) == 0){  
-       (void) fprintf( stderr, "%s: Window manager didn't set "  
-                                "icon sizes - using default.\n", progname); 
-     }
-    else {  
-       ;  
-       /* A real application would search through size_list  
-        * here to find an acceptable icon size and then  
-        * create a pixmap of that size; this requires that  
-        * the application have data for several sizes of icons */  
-    } 
-  
-/* Create pixmap of depth 1 (bitmap) for icon */  
-    icon_pixmap = XCreateBitmapFromData(display, win,  
+ 
+  window_size = BIG_ENOUGH ;
+  /* Get available icon sizes from window manager */ 
+  if (XGetIconSizes(display, RootWindow(display,screen_num),&size_list, &count) == 0){ 
+    (void) fprintf( stderr, "%s: Window manager didn't set " 
+                "icon sizes - using default.\n", progname); 
+   }
+  else { 
+    ; 
+    /* A real application would search through size_list 
+    * here to find an acceptable icon size and then 
+    * create a pixmap of that size; this requires that 
+    * the application have data for several sizes of icons */ 
+  } 
+ 
+/* Create pixmap of depth 1 (bitmap) for icon */ 
+  icon_pixmap = XCreateBitmapFromData(display, win, 
 			WB_icon_bitmap_bits,WB_icon_bitmap_width,WB_icon_bitmap_height); 
  
-    /* Set size hints for window manager; the window manager  
-     * may override these settings   
-     * Note that in a real application, if size or position  
-     * were set by the user, the flags would be USPosition  
-     * and USSize and these would override the window manager's  
-     * preferences for this window   
-     * x, y, width, and height hints are now taken from  
-     * the actual settings of the window when mapped; note  
-     * that PPosition and PSize must be specified anyway */  
-    size_hints->flags = PPosition | PSize | PMinSize;  
-   
+  /* Set size hints for window manager; the window manager 
+   * may override these settings  
+   * Note that in a real application, if size or position 
+   * were set by the user, the flags would be USPosition 
+   * and USSize and these would override the window manager's 
+   * preferences for this window  
+   * x, y, width, and height hints are now taken from 
+   * the actual settings of the window when mapped; note 
+   * that PPosition and PSize must be specified anyway */ 
+  size_hints->flags = PPosition | PSize | PMinSize; 
+  
 
-    /* These calls store window_name and icon_name into  
-     * XTextProperty structures and set their other fields  
-     * properly */  
-    if (XStringListToTextProperty(&window_name, 1, &windowName) == 0) {  
-       (void) fprintf( stderr, "%s: structure allocation for "  
-                               "windowName failed.\n", progname);  
-       exit(-1);return 0;  
-    }  
-    if (XStringListToTextProperty(&icon_name, 1, &iconName) == 0) {  
-       (void) fprintf( stderr, "%s: structure allocation for "  
-                               "iconName failed.\n", progname);  
-       exit(-1);  return 0;  
-    }  
-    wm_hints->initial_state = NormalState;  
-    wm_hints->input = True;  
-    wm_hints->icon_pixmap = icon_pixmap;  
-    wm_hints->flags = StateHint | IconPixmapHint | InputHint;  
-    class_hints->res_name = progname;  
-    class_hints->res_class = "Basicwin";  
-    XSetWMProperties(display, win, &windowName, &iconName,  
-          largv, largc, size_hints, wm_hints,  
-          class_hints);  
-   /* } ??? */ 
+  /* These calls store window_name and icon_name into 
+   * XTextProperty structures and set their other fields 
+   * properly */ 
+  if (XStringListToTextProperty(&window_name, 1, &windowName) == 0) { 
+    (void) fprintf( stderr, "%s: structure allocation for " 
+                "windowName failed.\n", progname); 
+    exit(-1);return 0; 
+  } 
+  if (XStringListToTextProperty(&icon_name, 1, &iconName) == 0) { 
+    (void) fprintf( stderr, "%s: structure allocation for " 
+                "iconName failed.\n", progname); 
+    exit(-1); return 0; 
+  } 
+  wm_hints->initial_state = NormalState; 
+  wm_hints->input = True; 
+  wm_hints->icon_pixmap = icon_pixmap; 
+  wm_hints->flags = StateHint | IconPixmapHint | InputHint; 
+  class_hints->res_name = progname; 
+  class_hints->res_class = "Basicwin"; 
+  XSetWMProperties(display, win, &windowName, &iconName, 
+     largv, largc, size_hints, wm_hints, 
+     class_hints); 
+  /* } ??? */ 
 
-    /* Select event types wanted */  
-    XSelectInput(display, win,
-	  ExposureMask | KeyPressMask |
- 	  ButtonPressMask | StructureNotifyMask );  
+  /* Select event types wanted */ 
+  XSelectInput(display, win,
+	 ExposureMask | KeyPressMask |
+ 	 ButtonPressMask | StructureNotifyMask ); 
 
-    /* ...GC for text and drawing */  
-    getGC(win, &gc, font_info);  
-    load_font(&font_info,&gc);
+  /* ...GC for text and drawing */ 
+  getGC(win, &gc, font_info); 
+  load_font(&font_info,&gc);
 
-    /* Display window */ 
-    buforek[0]=NODATA; 
-    XSetErrorHandler(ErrorHandler);
-    XMapWindow(display, win); 
-    
-    /* Alloc pixmap for contens buffering */
-    if(buffered)
-    	ResizeBuffer(width,height);
+  /* Display window */ 
+  buforek[0]=NODATA; 
+  XSetErrorHandler(ErrorHandler);
+  XMapWindow(display, win); 
+  
+  /* Alloc pixmap for contens buffering */
+  if(buffered)
+  	ResizeBuffer(width,height);
 
-    opened=1;
-    atexit(close_plot);
-    if(signal(SIGPIPE,SigPipe)!=SIG_ERR && trace)
-	  fprintf(stderr,"SIGPIPE handler instaled\n");
-    _InitMenuPipe(win, icon_name);
-    while(!input_ready()); /* Wait for expose */ 
+  opened=1;
+  atexit(close_plot);
+  if(signal(SIGPIPE,SigPipe)!=SIG_ERR && trace)
+	 fprintf(stderr,"SIGPIPE handler instaled\n");
+  _InitMenuPipe(win, icon_name);
+  while(!input_ready()); /* Wait for expose */ 
 
-    /* Czysci zeby wprowadzic ustalone tlo */
-    if(trace)
+  /* Czysci zeby wprowadzic ustalone tlo */
+  if(trace)
 	fprintf(stderr,"Background is %d\n",(int)bacground);
-    clear_screen();
+  clear_screen();
 
-    return 1;
+  return 1;
 }
 
 int screen_height()
 {
-return ini_b+(ini_cb*font_height)/muly;/* Window size */  
+return ini_b+(ini_cb*font_height)/muly;/* Window size */ 
 }
 
-int  screen_width()
+int screen_width()
 {
-return ini_a+(ini_ca*font_width)/mulx;/* Window size */  
+return ini_a+(ini_ca*font_width)/mulx;/* Window size */ 
 }
 
-int  char_height(char znak)
+int char_height(char znak)
 {
 int pom=(font_height+muly)/muly;
 /*if(pom<1)pom=1;*/
 return pom;
 }
 
-int  char_width(char znak)
+int char_width(char znak)
 {
 int width;
 char pom[2];
@@ -898,14 +912,14 @@ if(width<1)width=1;
 return width;
 }
 
-int  string_height(const char* str)
+int string_height(const char* str)
 /* BARDZO PRYMITYWNIE! */
 /* Aktualne rozmiary lancucha */
 {
 return char_height(*str);
 }
 
-int  string_width(const char* str)
+int string_width(const char* str)
 /* ...potrzebne do jego pozycjonowania */
 {
 int pom=XTextWidth(font_info,str,strlen(str))/mulx;
@@ -921,10 +935,10 @@ if(trace)
 if(animate)
 	{/* Wyswietlenie bitmapy */
 	XCopyArea(display, cont_pixmap, win, gc,
-           0/*src_x*/, 0/*src_y*/, 
-           width, height,  
-           0/*dest_x*/, 0/*dest_y*/);
-        if(trace)
+      0/*src_x*/, 0/*src_y*/, 
+      width, height, 
+      0/*dest_x*/, 0/*dest_y*/);
+    if(trace)
 		fprintf(stderr,"DOING BITBLT"); 
 	}
 XFlush(display);
@@ -940,7 +954,7 @@ static int first_to_read=0;
 
 
 
-int  input_ready()
+int input_ready()
 /* zalezna od platformy funkcja sprawdzajaca czy jest wejscie */
 {
 if(first_to_read) 
@@ -948,20 +962,20 @@ if(first_to_read)
 
 if(XPending(display)!=0) 	/* Sprawdzenie czy nie ma zdarzen */
 	{			/* SA JAKIES!*/
-        buforek[0]=NODATA; 	/* Asekuranctwo */
+    buforek[0]=NODATA; 	/* Asekuranctwo */
 	Read_XInput(); 		/* Przetwarzanie zdarzen */
-        if(buforek[0]!=NODATA)	/* Jest cos do zwrocenia jako znak */
-           {
-	   first_to_read=buforek[0]; /*Zostanie przeczytane przez get_char() */
-           buforek[0]=NODATA;  	
-	   return 1;		/* Wiec mozna wywolac get_char() */
-	   }            
+    if(buforek[0]!=NODATA)	/* Jest cos do zwrocenia jako znak */
+      {
+	  first_to_read=buforek[0]; /*Zostanie przeczytane przez get_char() */
+      buforek[0]=NODATA; 	
+	  return 1;		/* Wiec mozna wywolac get_char() */
+	  }      
 	}
  
 return 0;
 }
 
-int  set_char(int c)	
+int set_char(int c)	
 /* Odeslanie znaku na wejscie - zwraca 0 jesli nie ma miejsca */
 {
 if(first_to_read!=0)/* Nieodebrano */
@@ -970,7 +984,7 @@ first_to_read=c;
 return 1;
 }
 
-int  get_char()
+int get_char()
 /* odczytywanie znakow sterowania */
 {
 int pom;
@@ -1009,92 +1023,92 @@ void print(int x,int y,char* format,...)
 size_t len=0;
 unsigned font_height=0;
 
-   va_list argptr;
+  va_list argptr;
 
-   va_start(argptr, format);
+  va_start(argptr, format);
 
-   vsprintf(bufor, format, argptr);
+  vsprintf(bufor, format, argptr);
 
-   va_end(argptr);
+  va_end(argptr);
 
-   if(straznik1!=0x77 || straznik2!=0x77)
+  if(straznik1!=0x77 || straznik2!=0x77)
 		{
 		fprintf(stderr,"symshell.print(...) - line exced 1024b!");
 		abort();
 		}
 
-  /* Print string in window */
-  /* Need length for both XTextWidth and XDrawString */  
-    len = strlen(bufor);  
+ /* Print string in window */
+ /* Need length for both XTextWidth and XDrawString */ 
+  len = strlen(bufor); 
 
-    /* Get string widths & hight */  
-    /*
-    width1 = XTextWidth(font_info, string1, len1);  
-    */
-    
-    font_height = font_info->ascent + font_info->descent; 
+  /* Get string widths & hight */ 
+  /*
+  width1 = XTextWidth(font_info, string1, len1); 
+  */
+  
+  font_height = font_info->ascent + font_info->descent; 
  
-    
+  
  /* Multiplicaton of coordinates, if window is bigger */
-    x*=mulx; 
-    y*=muly; 
-   
-    ox=x;oy=y;
-    CurrForeground=-1;
-    XSetForeground(display,gc,Scale[0]);
-    XSetBackground(display,gc,Scale[bacground]);
-    
+  x*=mulx; 
+  y*=muly; 
+  
+  ox=x;oy=y;
+  CurrForeground=-1;
+  XSetForeground(display,gc,Scale[0]);
+  XSetBackground(display,gc,Scale[bacground]);
+  
 if(!animate)
-    XDrawImageString(display, win, gc, x , y+font_height ,  bufor, len); 
+  XDrawImageString(display, win, gc, x , y+font_height , bufor, len); 
 if(buffered)
-    XDrawImageString(display, cont_pixmap, gc, x , y+font_height ,  bufor, len);
+  XDrawImageString(display, cont_pixmap, gc, x , y+font_height , bufor, len);
 
 }
 
 void printc(int x,int y,
-    unsigned char fore,unsigned char back,
-    char* format,...)
+  unsigned char fore,unsigned char back,
+  char* format,...)
 {
 size_t len=0;
 unsigned font_height=0;
 
-   va_list argptr;
+  va_list argptr;
 
-   va_start(argptr, format);
+  va_start(argptr, format);
 
-   vsprintf(bufor, format, argptr);
+  vsprintf(bufor, format, argptr);
 
-   va_end(argptr);
+  va_end(argptr);
 
-   if(straznik1!=0x77 || straznik2!=0x77)
+  if(straznik1!=0x77 || straznik2!=0x77)
 		{
 		fprintf(stderr,"symshell.print(...) - line exced 1024b!");
 		abort();
 		}
 
-  /* Print string in window */
-  /* Need length for both XTextWidth and XDrawString */  
-    len = strlen(bufor);  
+ /* Print string in window */
+ /* Need length for both XTextWidth and XDrawString */ 
+  len = strlen(bufor); 
 
-    /* Get string widths & hight */  
+  /* Get string widths & hight */ 
 /*
-    width1 = XTextWidth(font_info, string1, len1);  
+  width1 = XTextWidth(font_info, string1, len1); 
 */
-    font_height = font_info->ascent + font_info->descent; 
+  font_height = font_info->ascent + font_info->descent; 
  
-    /* Output text, centered on each line */
+  /* Output text, centered on each line */
  
-    x*=mulx; /* Multiplicaton of coordinates */
-    y*=muly; /* if window is bigger */
-  
-    ox=x;oy=y;
-    CurrForeground=-1;
-    XSetForeground(display,gc,Scale[fore]);
-    XSetBackground(display,gc,Scale[back]);
+  x*=mulx; /* Multiplicaton of coordinates */
+  y*=muly; /* if window is bigger */
+ 
+  ox=x;oy=y;
+  CurrForeground=-1;
+  XSetForeground(display,gc,Scale[fore]);
+  XSetBackground(display,gc,Scale[back]);
 if(!animate)
-    XDrawImageString(display, win, gc, x , y+font_height ,  bufor, len);
+  XDrawImageString(display, win, gc, x , y+font_height , bufor, len);
 if(buffered)
-    XDrawImageString(display, cont_pixmap, gc, x , y+font_height ,  bufor, len);
+  XDrawImageString(display, cont_pixmap, gc, x , y+font_height , bufor, len);
 }
 
 void plot(int x,int y,unsigned char c)
@@ -1103,28 +1117,28 @@ void plot(int x,int y,unsigned char c)
 x*=mulx; /* Multiplicaton of coordinates */
 y*=muly; /* if window is bigger */
 if(c!=CurrForeground)
-   { 
-   CurrForeground=c;
-   XSetForeground(display,gc,Scale[c]);
-   }
+  { 
+  CurrForeground=c;
+  XSetForeground(display,gc,Scale[c]);
+  }
 if(mulx>1 || muly>1)
-   {
-   if(!animate)
-   	XFillRectangle(display, win, gc, x, y, mulx, muly); 
-   if(buffered)
-   	XFillRectangle(display, cont_pixmap, gc, x, y, mulx, muly); 
-   }
-   else 
-   {
-   if(!animate)
-   	XDrawPoint(display,win,gc,x,y);
-   if(buffered)
-   	XDrawPoint(display,cont_pixmap,gc,x,y);
-   }
+  {
+  if(!animate)
+  	XFillRectangle(display, win, gc, x, y, mulx, muly); 
+  if(buffered)
+  	XFillRectangle(display, cont_pixmap, gc, x, y, mulx, muly); 
+  }
+  else 
+  {
+  if(!animate)
+  	XDrawPoint(display,win,gc,x,y);
+  if(buffered)
+  	XDrawPoint(display,cont_pixmap,gc,x,y);
+  }
 }
 
 
-void fill_rect(int x1,int y1,int x2,int y2,unsigned  char c)
+void fill_rect(int x1,int y1,int x2,int y2,unsigned char c)
 {
 x1*=mulx; /* Multiplicaton of coordinates */
 y1*=muly; /* if window is bigger */
@@ -1132,42 +1146,42 @@ x2*=mulx; /* Multiplicaton of 2' coordinates */
 y2*=muly; /* if window is bigger */
 
 if(c!=CurrForeground)
-   { 
-   CurrForeground=c;
-   XSetForeground(display,gc,Scale[c]);
-   }
+  { 
+  CurrForeground=c;
+  XSetForeground(display,gc,Scale[c]);
+  }
 
 if(!animate)
-   	XFillRectangle(display, win, gc, x1, y1, x2-x1, y2-y1 ); 
+  	XFillRectangle(display, win, gc, x1, y1, x2-x1, y2-y1 ); 
 if(buffered)
-   	XFillRectangle(display, cont_pixmap, gc, x1, y1, x2-x1, y2-y1 ); 
+  	XFillRectangle(display, cont_pixmap, gc, x1, y1, x2-x1, y2-y1 ); 
  
 }
 
 void fill_poly(int vx,int vy,
-	       const ssh_point points[],int number,
-	       unsigned  char c)
+	    const ssh_point points[],int number,
+	    unsigned char c)
 /* Wypelnia wielokat przesuniety o vx,vy w kolorze c */
 {
 static XPoint _LocalTable[10];
-XPoint*       LocalPoints=_LocalTable;
+XPoint*    LocalPoints=_LocalTable;
 int i;
 
 if(number<=2)
-    return; /* Nie da sie rysowac wielokata o dwu punktach lub mniej */
+  return; /* Nie da sie rysowac wielokata o dwu punktach lub mniej */
 
 if(number>10) /* Jest za duzy.Alokacja */
-    LocalPoints=calloc(number,sizeof(XPoint));
+  LocalPoints=calloc(number,sizeof(XPoint));
 
 if(LocalPoints==NULL)
-   {assert("Memory for polygon");return;}
+  {assert("Memory for polygon");return;}
 
 if(c!=CurrForeground)
-   { 
-   CurrForeground=c;
-   XSetForeground(display,gc,Scale[c]);
-   }
-   
+  { 
+  CurrForeground=c;
+  XSetForeground(display,gc,Scale[c]);
+  }
+  
 vx*=mulx;
 vy*=muly;
 
@@ -1178,29 +1192,29 @@ for(i=0;i<number;i++)
 	}
 
 if(!animate)
-   	XFillPolygon(display, win, gc,
-   	LocalPoints,number,Complex,CoordModeOrigin); 
+  	XFillPolygon(display, win, gc,
+  	LocalPoints,number,Complex,CoordModeOrigin); 
 
 if(buffered)
-   	XFillPolygon(display, cont_pixmap, gc,
-   	   LocalPoints,number,
-	   Complex,CoordModeOrigin); 
+  	XFillPolygon(display, cont_pixmap, gc,
+  	  LocalPoints,number,
+	  Complex,CoordModeOrigin); 
 
 if(number>10) /*Byl duzy*/
 	free(LocalPoints);
 }
 
-void line(int x1,int y1,int x2,int y2,unsigned  char c)
+void line(int x1,int y1,int x2,int y2,unsigned char c)
 /* wyswietlenie lini */
 {
 static unsigned line_width=0;
 x1*=mulx;x2*=mulx; /* Multiplicaton of coordinates */
-y1*=muly;y2*=muly;  /* if window is bigger */
+y1*=muly;y2*=muly; /* if window is bigger */
 if(c!=CurrForeground)
-   { 
-   CurrForeground=c;
-   XSetForeground(display,gc,Scale[c]);
-   }
+  { 
+  CurrForeground=c;
+  XSetForeground(display,gc,Scale[c]);
+  }
 if( line_width!=(mulx>muly?muly:mulx) )
 	{
 	line_width=(mulx>muly?muly:mulx);
@@ -1209,7 +1223,7 @@ if( line_width!=(mulx>muly?muly:mulx) )
 		fprintf(stderr,"Set line width to %d\n",line_width);
 		}
 	XSetLineAttributes(display, gc,line_width,
-		 LineSolid,  CapRound, JoinRound);
+		 LineSolid, CapRound, JoinRound);
 	}
 if(!animate)
 	XDrawLine(display,win, gc, x1, y1, x2, y2);
@@ -1219,14 +1233,14 @@ if(buffered)
 
 void clear_screen()
 /* Czysci ekran przed zmiana zawartosci */
-{  
+{ 
 XSetForeground(display, gc, Scale[bacground] );
 CurrForeground=-1; 
 /* Clear screen and bitmap */
 if(!animate)
 	{
 	if(trace) fprintf(stderr,"Clear window\n");
-    	XFillRectangle(display,win , gc, 0,0,width,height);
+  	XFillRectangle(display,win , gc, 0,0,width,height);
 	}
 if(buffered)
 	{
@@ -1239,13 +1253,13 @@ void circle(int x,int y,int r,unsigned char c)
 /* Wyswietlenie okregu w kolorze c */
 {
 int angle2=360*64,r1,r2;
-x*=mulx;y*=muly;   /* Multiplicaton of coordinates */
-r1=r*mulx;r2=r*muly;  /* if window is bigger */
+x*=mulx;y*=muly;  /* Multiplicaton of coordinates */
+r1=r*mulx;r2=r*muly; /* if window is bigger */
 if(c!=CurrForeground)
-   { 
-   CurrForeground=c;
-   XSetForeground(display,gc,Scale[c]);
-   }
+  { 
+  CurrForeground=c;
+  XSetForeground(display,gc,Scale[c]);
+  }
 if(!animate)
 	XDrawArc(display, win , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
 if(buffered)
@@ -1256,13 +1270,13 @@ void fill_circle(int x,int y,int r,unsigned char c)
 /* KOlo w kolorze c */
 {
 int angle2=360*64,r1,r2;
-x*=mulx;y*=muly;   /* Multiplicaton of coordinates */
-r1=r*mulx;r2=r*muly;  /* if window is bigger */
+x*=mulx;y*=muly;  /* Multiplicaton of coordinates */
+r1=r*mulx;r2=r*muly; /* if window is bigger */
 if(c!=CurrForeground)
-   { 
-   CurrForeground=c;
-   XSetForeground(display,gc,Scale[c]);
-   }
+  { 
+  CurrForeground=c;
+  XSetForeground(display,gc,Scale[c]);
+  }
 if(!animate)
 	XFillArc(display, win , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
 if(buffered)
@@ -1297,7 +1311,7 @@ if(repaint_flag==1)
 	return -1;	
 }
 
-int  get_mouse_event(int* xpos,int* ypos,int* click)
+int get_mouse_event(int* xpos,int* ypos,int* click)
 /* Odczytuje ostatnie zdazenie myszy */
 {
 if(LastMouse.flags!=0)
@@ -1319,36 +1333,36 @@ XColor RGB;
 RGB.red=0;RGB.green=0;RGB.blue=0;
 
 for(k=0;k<256;k++)
-    {
-    RGBarray[k]=RGB;
-    }
+  {
+  RGBarray[k]=RGB;
+  }
 
 
 if(UseGrayScale)
-  {
-  for(k=0;k<255;k++)
-    { 
-    long wal=k;
-    /*fprintf(stderr,"%u %ul\n",k,wal);*/
-    RGBarray[k].red=wal;
-    RGBarray[k].green=wal;
-    RGBarray[k].blue=wal;
-    }      
-  }
-  else
-  {
-  for(k=0;k<255;k++)
+ {
+ for(k=0;k<255;k++)
+  { 
+  long wal=k;
+  /*fprintf(stderr,"%u %ul\n",k,wal);*/
+  RGBarray[k].red=wal;
+  RGBarray[k].green=wal;
+  RGBarray[k].blue=wal;
+  }   
+ }
+ else
+ {
+ for(k=0;k<255;k++)
 	{
 	long wal;
 	double kat=(M_PI*2)*k/255.;
 	wal=255*sin(kat*1.25);
-	if(wal>0)  RGBarray[k].red=wal;
+	if(wal>0) RGBarray[k].red=wal;
 	wal=255*(-sin(kat*0.85));
-	if(wal>0)  RGBarray[k].green=wal;
+	if(wal>0) RGBarray[k].green=wal;
 	wal=255*(-cos(kat*1.1));
-	if(wal>0)  RGBarray[k].blue=wal;
+	if(wal>0) RGBarray[k].blue=wal;
 	}
-   }
+  }
 
 RGBarray[255].red=0xffff;
 RGBarray[255].green=0xffff;
@@ -1369,19 +1383,65 @@ pom.green=g*256;
 pixels[0]/*=pom.pixel*/=Scale[color];
 pom.pixel=0;	
 if(XAllocColor(display,colormap,&pom)!=0)
-    {
-    Scale[color]=pom.pixel;
-    /*Niepewna metoda,lub wrecz zla */
-    XFreeColors(display,colormap,pixels, 1,0);
-    }
+  {
+  Scale[color]=pom.pixel;
+  /*Niepewna metoda,lub wrecz zla */
+  XFreeColors(display,colormap,pixels, 1,0);
+  }
 }
 
 
 /*#pragma exit close_plot*/
 
 
+/* Event names. Used in "type" field in XEvent structures. Not to be
+confused with event masks above. They start from 2 because 0 and 1
+are reserved in the protocol for errors and replies. */
 
+static char* event_names[]={
+"Event-0-error",
+"Event-1-reply",
+"KeyPress-2",
+"KeyRelease-3",
+"ButtonPress-4",
+"ButtonRelease-5",
+"MotionNotify-6",
+"EnterNotify-7",
+"LeaveNotify-8",
+"FocusIn-9",
+"FocusOut-10",
+"KeymapNotify-11",
+"Expose-12",
+"GraphicsExpose-13",
+"NoExpose-14",
+"VisibilityNotify-15",
+"CreateNotify-16",
+"DestroyNotify-17",
+"UnmapNotify-18",
+"MapNotify-19",
+"MapRequest-20",
+"ReparentNotify-21",
+"ConfigureNotify-22",
+"ConfigureRequest-23",
+"GravityNotify-24",
+"ResizeRequest-25",
+"CirculateNotify-26",
+"CirculateRequest-27",
+"PropertyNotify-28",
+"SelectionClear-29",
+"SelectionRequest-30",
+"SelectionNotify-31",
+"ColormapNotify-32",
+"ClientMessage-33",
+"MappingNotify-34",
+"LASTEvent-35"};/* must-be-bigger-than-any-event */
 
-
+char* event_name(int code)
+{
+if(code>=0 && code<sizeof(event_names)/sizeof(event_names[0]) )
+		return event_names[code];
+		else
+		return "Undefined";
+}
 
 
