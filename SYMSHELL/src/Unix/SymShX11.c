@@ -1,4 +1,4 @@
-/* Najprostrzy interface wizualizacyjny */
+﻿/* Najprostrzy interface wizualizacyjny */
 /* Wyswietla pod X-windows za pomoca biblioteki X11 */
 /* symshx11.c */
 
@@ -935,6 +935,47 @@ if(is_buffered)
     XDrawImageString(display, cont_pixmap, gc, x , y+font_height ,  bufor, len);
 }
 
+/*
+int buildColorD3(double red, double green, double blue)
+{
+    return(
+        ((int)(red*256)%256)<<16+
+        ((int)(green*256)%256)<<8+
+        ((int)(blue*256)%256));
+}
+*/
+
+int buildColor(unsigned char red, unsigned char green, unsigned char blue)
+{
+    return ( (int)(red) << 16) +
+           ( (int)(green)<< 8) +
+           ( (int)(blue) ) ;
+}
+
+void plot_rgb(int x,int y,
+				int r,int g,int b)
+{
+	x*=mulx; /* Multiplicaton of coordinates */
+	y*=muly; /* if window is bigger */
+	CurrForeground=-1;
+	XSetForeground(display,gc,buildColor(r,g,b) );
+
+	if(mulx>1 || muly>1)
+	   {
+	   if(!animate)
+	   	XFillRectangle(display, win, gc, x, y, mulx, muly);
+	   if(is_buffered)
+	   	XFillRectangle(display, cont_pixmap, gc, x, y, mulx, muly);
+	   }
+	   else
+	   {
+	   if(!animate)
+	   	XDrawPoint(display,win,gc,x,y);
+	   if(is_buffered)
+	   	XDrawPoint(display,cont_pixmap,gc,x,y);
+	   }
+}
+
 void plot(int x,int y,ssh_color c)
 /* ----//--- wyswietlenie punktu na ekranie */
 {
@@ -1378,7 +1419,9 @@ ini_cb=cb;
 
 /*#pragma exit close_plot*/
 
-void shell_setup(const char* title,int iargc,char* iargv[])
+void shell_setup(//const char* title,int iargc,char* iargv[]
+		           const char* title,int iargc,const char* iargv[]
+		)
 {
 /* Przekazanie parametrow wywolania */
 int i;
@@ -1440,6 +1483,13 @@ for(i=1;i<largc;i++)
 }
 
 
+int		dump_screen(const char* Filename)
+/* Zapisuje zawartosc ekranu do pliku graficznego
+ * w naturalnym formacie platformy: BMP, XBM itp */
+{
+	fprintf(stderr,"'dump_screen()' not implemented jet\n");
+	return 0;
+}
 
 
 
