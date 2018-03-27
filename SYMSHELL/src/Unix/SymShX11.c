@@ -1,8 +1,13 @@
-/* Najprostrzy interface wizualizacyjny */
-/* Wyswietla pod X-windows za pomoca biblioteki X11 */
-/* symshx11.c */
+/* 
+ PLIK: symshx11.c 
+ Najprostrzy interface wizualizacyjny do symulacji pod unix'em i linux'em
+ Wyswietla pod X-windows za pomoca biblioteki X11.
+ UWAGA! Kod nie jest przetestowany pod względem współpracy z wątkami i 
+ najprawdopodobniej nie jest wielowchodliwy - choćby dlatego, że miewa w 
+ funkcjach obiekty static 
+ TA WERSJA MA TEŻ JAKIŚ BLAD w OBSŁUDZE ZDARZENIA "EXPOSE". JAKI?!?!
+*/
 
-/* WERSJA Z BLEDEM NA EXPOSE */
 
 //#include "platform.h"
 #include <stdlib.h>
@@ -16,8 +21,8 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 
-#include "symshell.h"
-#include "icon.h"
+#include "../_SSHX11/symshell.h"
+#include "../_SSHX11/icon.h"
 
 //#define CREATE_FULL /* Use extended function for Window creation */
 #define BITMAPDEPTH 1
@@ -29,18 +34,20 @@
 
 /* For close_plot() */
 static int opened=0; /* Dla close plot. Zerowane tez gdy "broken-pipe" */
-static char trace=0; /* Domyslny poziom logowania zdarzeń X11 */
+static char trace=1; /* Domyslny poziom logowania zdarzeń X11 */
 extern int WB_error_enter_before_clean;
 
 
  /* progname is the string by which this program was invoked; this
-  * is global because it is needed in most application functions */
- static char *progname="WB SYMULATION NAME NOT SET";
+  * is global because it is needed in most application functions 
+  * and is not const because X-functions need char** not const char**
+  */
+ static const char *progname="WB SYMULATION NAME NOT SET";
  static char *window_name = "WB X11 window for symulation shell";
  static char *icon_name = "WB-sym-shell";
 
  static size_t largc=0;		/* Do zapamietania przekazanych przez funkcje */
- static char**  largv=NULL;
+ static const char**  largv=NULL;
 
  static int   is_buffered=0;       /* Czy okno jest buforowane pixmapa */
  static int     animate=0;	  /* Czy odswierznaie tylko gdy flush czy na biezaco */
@@ -137,7 +144,7 @@ mouse=yes;
 return pom;
 }
 
-unsigned get_background()
+unsigned background()
 {
 return bacground;
 }
@@ -159,7 +166,7 @@ if(animate)	/* Musi byc wlaczona bitmapa buforujaca */
 	is_buffered=1;/* zeby mozna bylo na nia pisac */
 }
 
-unsigned get_buffering()
+int buffered()
 {
 return animate;
 }
@@ -324,10 +331,7 @@ static void ResizeBuffer(unsigned int nwidth,unsigned int nheight)
 }
 
 
-static void TooSmall(win, gc, font_info)
-Window win;
-GC gc;
-XFontStruct *font_info;
+static void TooSmall(Window win,GC gc,XFontStruct * font_info)
 {
  char *string1 = "Too Small";
  int y_offset, x_offset;
@@ -355,9 +359,7 @@ static int ErrorHandler(Display *xDisplay, XErrorEvent *event)
     return 0;
 }
 
-static void load_font(font_info,gc)
- XFontStruct **font_info;
- GC *gc;
+static void load_font(XFontStruct **font_info,GC *gc)
  {
     char fontname[128];
     XFontStruct* l_font_info;
@@ -375,9 +377,9 @@ REPLAY:
     {
        (void) fprintf( stderr, "%s: Cannot open %s font\n",
              progname,fontname);
-       if(fontname[0]!="*")
+       if(fontname[0]!='*')
         {
-          fontname[0]="*";fontname[1]=0;
+          fontname[0]='*';fontname[1]=0;
           goto REPLAY;
         }
         else
@@ -423,11 +425,8 @@ REPLAY:
      fprintf(stderr,"Font size is %ux%u\n",font_width,font_height);
  }
 
-static void place_graphics(win, gc,area_x,area_y,area_width, area_height)
-Window win;
-GC gc;
-int area_x,area_y;
-unsigned int area_width, area_height;
+static void place_graphics(Window win,GC gc,int area_x,int area_y,
+				unsigned int area_width,unsigned int area_height)
 {
   XCopyArea(display, cont_pixmap, win, gc,
            area_x/*src_x*/, area_y /*src_y*/,
@@ -530,20 +529,19 @@ if(pipe_break)	/* Musi zwrocic EOF */
            break;
 
        case ConfigureNotify:
-       	   DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
-       	   if(trace)
-          	fprintf(stderr,"CONFIGURE: %s=%dx%d scale: x=%d:1 y=%d:1 ",
-			icon_name,
-			width,height,mulx,muly);
+       	   DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */          	
 
           /* Window has been resized; change width
            * and height for next Expose */
-
 	  if( width== report.xconfigure.width &&
               height== report.xconfigure.height)
 		{
-        	if(trace)
-			fprintf(stderr,"The same.\n");
+        	if(trace>3)
+		{
+			fprintf(stderr,"CONFIGURE: %s=%dx%d scale: x=%d:1 y=%d:1 ",
+					icon_name,width,height,mulx,muly);
+			fprintf(stderr,"The same!\n");
+		}
 		break; /* Nic sie nie zmienilo */
 		}
 
@@ -555,7 +553,11 @@ if(pipe_break)	/* Musi zwrocic EOF */
 	     {
              window_size = TOO_SMALL;
              if(trace)
+	     	{
+		fprintf(stderr,"CONFIGURE: %s=%dx%d scale: x=%d:1 y=%d:1 ",
+					icon_name,width,height,mulx,muly);
 	      	fprintf(stderr,"To small!\n");
+		}
 	     }
           else
 	     {
@@ -570,12 +572,16 @@ if(pipe_break)	/* Musi zwrocic EOF */
 
 	     if(is_buffered)
 		 {
-	        ResizeBuffer(width,height);
+	         ResizeBuffer(width,height);
 			buffer_empty=1;
 		 }
 
 	     if(trace)
-	     	fprintf(stderr,"->%dx%d scale: x=%d:1 y=%d:1 \n",width,height,mulx,muly);
+		{
+		fprintf(stderr,"CONFIGURE: %s=%dx%d ",
+					icon_name,width,height);
+	     	fprintf(stderr,"-> scale: x=%d:1 y=%d:1 \n",mulx,muly);
+		}
 	     }
           break;
 
@@ -621,10 +627,7 @@ if(pipe_break)	/* Musi zwrocic EOF */
 
 }
 
- static void getGC(win, gc, font_info)
- Window win;
- GC *gc;
- XFontStruct *font_info;
+ static void getGC(Window win,GC *gc,XFontStruct *font_info)
  {
     XColor pom,Array[512];
     unsigned long valuemask = 0,i; /* Ignore XGCvalues and
@@ -983,8 +986,8 @@ if(is_buffered)
 }
 
 void fill_poly(int vx,int vy,
-					const ssh_point points[],int number,
-					ssh_color c)
+		const ssh_point points[],int number,
+		ssh_color c)
 /* Wypelnia wielokat przesuniety o vx,vy w kolorze c */
 {
 static XPoint _LocalTable[10];
@@ -996,8 +999,8 @@ if(number<=2)
 		wielokata o dwu punktach lub
 			mniej*/
 
-if(number>10) /*Jest za duzy.Alokacja*/
-	LocalPoints=calloc(number,sizeof(XPoint));
+if(number>10) /*Jest za duzy. Konieczna alokacja*/
+	LocalPoints=(XPoint*)calloc(number,sizeof(XPoint));
 
 if(LocalPoints==NULL)
 		 {assert("Memory for polygon");return;}
@@ -1019,10 +1022,10 @@ for(i=0;i<number;i++)
 
 if(!animate)
    	XFillPolygon(display, win, gc,
-   	LocalPoints,number,Complex,CoordModeOrigin);
+   		LocalPoints,number,Complex,CoordModeOrigin);
 if(is_buffered)
    	XFillPolygon(display, cont_pixmap, gc,
-   	 LocalPoints,number,Complex,CoordModeOrigin);
+   	 	LocalPoints,number,Complex,CoordModeOrigin);
 
 if(number>10) /*Byl duzy*/
 	free(LocalPoints);
@@ -1320,11 +1323,11 @@ ini_cb=cb;
     wm_hints->input = True;
     wm_hints->icon_pixmap = icon_pixmap;
     wm_hints->flags = StateHint | IconPixmapHint | InputHint;
-    class_hints->res_name = progname;
+    class_hints->res_name = (char*)progname; /* stara definicja wymaga char* bez const */
     class_hints->res_class = "Basicwin";
     XSetWMProperties(display, win, &windowName, &iconName,
-          largv, largc, size_hints, wm_hints,
-          class_hints);
+          	(char**)largv, largc, 
+		size_hints, wm_hints, class_hints);
    /* } ??? */
 
     if(trace)
@@ -1377,16 +1380,17 @@ ini_cb=cb;
 }
 
 /*#pragma exit close_plot*/
-
-void shell_setup(const char* title,int iargc,char* iargv[])
+static char locTitle[1024]; /* X-functions need char* not a const char* */
+void shell_setup(const char* title,int iargc,const char* iargv[])
 {
-/* Przekazanie parametrow wywolania */
 int i;
+/* Przekazanie parametrow wywolania */
+strncpy(locTitle,title,1023);locTitle[1023]='\0';/* Safe copy of title */ 
 largc=iargc;
 largv=iargv;
 progname=largv[0];
-window_name = title;
-icon_name = title;
+window_name = locTitle;
+icon_name = locTitle;
 for(i=1;i<largc;i++)
 	{
 	if(strncmp(largv[i],"-h",2)==0)
