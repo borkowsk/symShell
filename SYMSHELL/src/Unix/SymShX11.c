@@ -11,7 +11,7 @@
 #include <X11/Xlib.h> 
 #include <X11/Xutil.h>
 #include <X11/Xos.h> 
-#include <X11/Xatom.h> 
+#include <X11/Xatom.h>   
 
 #include "symshell.h"
 #include "icon.h" 
@@ -96,20 +96,21 @@ extern int WB_error_enter_before_clean;
  static int mouse=0;
 
  static struct { int  flags, x, y;unsigned buttons;} 
-										LastMouse={0, 0, 0, 0};
+	LastMouse={0, 0, 0, 0};
 
  static int error_limit=3; /* Limit odeslanych bledow od x-serwera */
  static int error_count=3; /*antylicznik bledow - gdy 0 - wyjscie */
  static int DelayAction=0; /* Sterowanie zasypianiem jesli program czeka */
  static int UseGrayScale=0;
- 
-static int pipe_break=0;
+ static int pipe_break=0;
+
 void SigPipe(int num)
 {
 pipe_break=1;
 opened=0;
 signal(num,SIG_IGN);
 fprintf(stderr,"SYMSHELL GOT A SIGNALL #%d\n",num); 
+exit(num);
 }
 
 int mouse_activity(int yes)
@@ -165,28 +166,51 @@ static void CloseAll()
 	gc=0; }
 
 #ifndef __MSDOS__
-if(colormap!=0){
+if(colormap!=0)
+	{
  	XUninstallColormap(display,colormap);
  	XFreeColormap(display,colormap);
-	colormap=0;}
+	colormap=0;
+	}
 #endif
 
-if(alloc_cont)
+if(alloc_cont!=0)
  	{
 	XFreePixmap(display,cont_pixmap);
 	if(trace)
   		fprintf(stderr,"%s %x\n","FREE PIXMAP",cont_pixmap); 
+	cont_pixmap=0;
 	}
 
+if(win!=0)
+    { 
+    if(trace)
+	   fprintf(stderr, "%s %x ","DESTROY WINDOW",win); 
+
+    XDestroyWindow(display,win);
+    if(trace)
+	   fprintf(stderr, "-OK\n",win); 
+    win=0;	   	
+    }
+
+if(trace)
+	   fprintf(stderr,"CLOSE DISPLAY");    
 XCloseDisplay(display);  
+if(trace)
+	   fprintf(stderr,"-OK\n");    
 display=0;
 }
+
+static int inside_close_plot=0;/* Zabezpiecza przed ukryta rekurencja w close_plot */
 
 void close_plot()
 /* --------//---------- zamkniecie grafiki/semigrafiki */
 {
+if(inside_close_plot) return;
 if(opened)
     {
+    inside_close_plot=1;
+    XSync(display,1/*DISCARD EVENTS*/);
     if(WB_error_enter_before_clean)
 		{
 		char* kom="(Press ANY KEY to close graphix)";
@@ -194,12 +218,18 @@ if(opened)
 		print(screen_width()/2-(strlen(kom)*char_width('X'))/2,screen_height()/2,kom);
 		flush_plot();
 		fprintf(stderr,"(See at window %s )\n",window_name);
+		fflush(stderr);
+		fflush(stdout);
+		XSync(display,1/*DISCARD EVENTS*/);
 		get_char();
 		WB_error_enter_before_clean=0;
 		}
     CLOSE:		
     CloseAll();
+    fflush(stderr);
+    fflush(stdout);
     opened=0;
+    inside_close_plot=0;
     }
 }
  
@@ -214,7 +244,7 @@ static void ResizeBuffer(unsigned int nwidth,unsigned int nheight)
  	
  if(trace)
    {
-   printf("%s %dx%d\n","ALLOC PIXMAP",nwidth,nheight); 
+   fprintf(stderr,"%s %dx%d\n","ALLOC PIXMAP",nwidth,nheight); 
    /*getchar();*/
    }
    
@@ -227,7 +257,7 @@ static void ResizeBuffer(unsigned int nwidth,unsigned int nheight)
  if(trace)
 	{
 	XFlush(display);
-	printf("PIXMAP %x DISPLAY %x WIN %x %s\n",
+	fprintf(stderr,"PIXMAP %x DISPLAY %x WIN %x %s\n",
 			cont_pixmap,
 			display,
 			win,
@@ -270,7 +300,7 @@ static void load_font(font_info,gc)
     font_height = (*font_info)->ascent + (*font_info)->descent;
  
  if(trace)
-  printf("%s:font %ux%u\n",icon_name,font_width,font_height); 
+   fprintf(stderr,"%s:font %ux%u\n",icon_name,font_width,font_height); 
  }  
 
 static void TooSmall(win, gc, font_info)  
@@ -317,40 +347,33 @@ unsigned int area_width, area_height;
            area_x/*dest_x*/, area_y/*dest_y*/);
 }
   
-static int Read_XInput()
+static void Read_XInput()
 {
-static int first=1;
 static int buffer_empty=1;
 
 XEvent report;  /* Miejsce na odczytywane zdazenia */
 
 if(pipe_break)	/* Musi zwrocic EOF */	
-	return 1;
-
-
+	{
+	*buforek=EOF;
+	return ;
+	}
+	
  /* Get events, use first to display text and graphics */  
-      XNextEvent(display, &report); 
-      if(report.xany.send_event==FALSE)
-       {
-       switch  (report.type) {  
+    
+    XNextEvent(display, &report); 
+        
+    switch  (report.type) {  
 
-       case Expose: 
+    case Expose: 
        if(trace)
-         printf("EXPOSE: %s #%d x=%d y=%d %dx%d\n",
+         fprintf(stderr,"EXPOSE: %s #%d x=%d y=%d %dx%d\n",
 			icon_name,
 			report.xexpose.count,
 			report.xexpose.x,
 			report.xexpose.y,
 			report.xexpose.width,
 			report.xexpose.height); 
-
-       if(first==1)
-	    {
-	    /* Pierwszy event typu Exposure jest powielany, */   
-	    /* Zeby zawsze cos bylo do odebrania */ 
-	    first=0;
-            XSendEvent(display,win,FALSE,  ExposureMask ,&report);  	   
-	    }
 
           /* Unless this is the last contiguous expose,  
            * don't draw the window */  
@@ -393,7 +416,7 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		if(report.xexpose.count == 0 ||  buffer_empty )
 			{
 			if(trace)
-		    		printf("EXPOSE force repaint\n");
+		    		fprintf(stderr,"EXPOSE force repaint\n");
 			buforek[0]='\r';
 			buffer_empty=0;
 			
@@ -403,7 +426,7 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		{
            	/* Refresh from pixmap buffer */ 
 		if(trace)
-		    printf("EXPOSE DOING BITBLT\n");
+		    fprintf(stderr,"EXPOSE DOING BITBLT\n");
                 place_graphics(win, gc ,
 			report.xexpose.x,report.xexpose.y,
 			report.xexpose.width,report.xexpose.height
@@ -421,7 +444,7 @@ if(pipe_break)	/* Musi zwrocic EOF */
        case ConfigureNotify:  
        	   DelayAction=0;/* Pojawila sie aktywnosc. Nie nalezy spac! */
        	   if(trace)
-          	printf("CONFIGURE: %s=%dx%d scale: x=%d:1 y=%d:1 ",
+          	fprintf(stderr,"CONFIGURE: %s=%dx%d scale: x=%d:1 y=%d:1 ",
 			icon_name,
 			width,height,mulx,muly);
 	   
@@ -464,7 +487,7 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		 }
 		
 	     if(trace)
-	     	printf("->%dx%d scale: x=%d:1 y=%d:1 \n",width,height,mulx,muly); 
+	     	fprintf(stderr,"->%dx%d scale: x=%d:1 y=%d:1 \n",width,height,mulx,muly); 
 	     } 
           break;  
 
@@ -478,7 +501,7 @@ if(pipe_break)	/* Musi zwrocic EOF */
 		LastMouse.y=report.xbutton.y;
 		LastMouse.buttons=report.xbutton.button;
 		if(trace)
-		    printf("ButtonPress:x=%d y=%d b=X0%x\n",
+		    fprintf(stderr,"ButtonPress:x=%d y=%d b=X0%x\n",
 		    LastMouse.x,LastMouse.y,LastMouse.buttons  );
 		}
 	    break;
@@ -507,12 +530,7 @@ if(pipe_break)	/* Musi zwrocic EOF */
            * since nothing is done with them */  
           break;  
        } /* End switch */ 
-       } 
-       else
-       XSendEvent(display,win,FALSE,  ExposureMask | KeyPressMask |
- 	  ButtonPressMask | StructureNotifyMask,&report);    /* Zeby zawsze cos bylo do odebrania */ 
 
-return 0;
 }
  
  static void getGC(win, gc, font_info)  
@@ -606,14 +624,14 @@ for(i=1;i<largc;i++)
 	{
 	if(strncmp(largv[i],"-h",2)==0)
 		{
-		printf("SYMSHELL for X11 enviroment. Compiled %s\n",__DATE__);
-		printf("Supported swithes:\n\t -mapped+/-] \n\t -buffered[+/-]"
+		fprintf(stderr,"SYMSHELL for X11 enviroment. Compiled %s\n",__DATE__);
+		fprintf(stderr,"Supported swithes:\n\t -mapped+/-] \n\t -buffered[+/-]"
 				"\n\t -trace[+/-]"
 				"\n\t -bestfont[+/-] "
 				"\n\t -traceevt[+/-] "
 				"\n\t -gray[+/-] "
 				"\n"); 
-		printf("You can always gracefully break the program sending\n"
+		fprintf(stderr,"You can always gracefully break the program sending\n"
 		" the  ^C  or  ^D  key	 to  g_r_a_p_h_i_c_s  w_i_n_d_o_w !\n"
 		"Other methods break the program immediatelly by exit call!\n");		
 		}
@@ -621,13 +639,13 @@ for(i=1;i<largc;i++)
 	if(strncmp(largv[i],"-gray",5)==0)
 		{
 		UseGrayScale=(largv[i][5]=='+')?1:0;
-	        printf("Gray scale is %s\n",(UseGrayScale?"ON":"OFF"));
+	        fprintf(stderr,"Gray scale is %s\n",(UseGrayScale?"ON":"OFF"));
 		}
 	else
 	if(strncmp(largv[i],"-mapped",7)==0)
 		{
 		buffered=(largv[i][7]=='+')?1:0;
-	        printf("Double mapping is %s\n",(buffered?"ON":"OFF"));
+	        fprintf(stderr,"Double mapping is %s\n",(buffered?"ON":"OFF"));
 		/* Jesli user chec tryb mapowania to nie bedziemy */
 		animate=0; /* animowac */
 		}
@@ -635,7 +653,7 @@ for(i=1;i<largc;i++)
 	if(strncmp(largv[i],"-buffered",9)==0)
 		{
 		animate=(largv[i][9]=='+')?1:0;
-	        printf("Buffered is %s\n",(animate?"ON":"OFF"));
+	        fprintf(stderr,"Buffered is %s\n",(animate?"ON":"OFF"));
 		/* Musi byc wlaczona bitmapa buforujaca */
 		buffered=animate;/* zeby mozna bylo na nia pisac */
 		}
@@ -643,13 +661,13 @@ for(i=1;i<largc;i++)
 	if(strncmp(largv[i],"-bestfont",9)==0)
 		{
 		ResizeFont=(largv[i][9]=='+')?1:0;
-	        printf("Search best font is %s\n",(ResizeFont?"ON":"OFF"));
+	        fprintf(stderr,"Search best font is %s\n",(ResizeFont?"ON":"OFF"));
 		}
 	else
 	if(strncmp(largv[i],"-traceevt",9)==0)
 		{
 		trace=(largv[i][9]=='+')?1:0;
-	        printf("Trace events is %s\n",(trace?"ON":"OFF"));
+	        fprintf(stderr,"Trace events is %s\n",(trace?"ON":"OFF"));
 		}
 	}
 }
@@ -694,9 +712,9 @@ ini_cb=cb;
 	disp_depht = XListDepths(display, screen_num, &disp_depht_num);
     if(trace)
     	{
-    	printf("Available display depths:");
+    	fprintf(stderr,"Available display depths:");
     	for(i=0;i<disp_depht_num;i++)
-    		printf("%d ",disp_depht[i]);
+    		fprintf(stderr,"%d ",disp_depht[i]);
     	putchar('\n');	
     	}	
     			
@@ -708,7 +726,7 @@ ini_cb=cb;
     		break;
     		}
    if(trace)
-   	printf("Select depth %d\n",default_deph);
+   	fprintf(stderr,"Select depth %d\n",default_deph);
    	
     /* Note that in a real application, x and y would default  
      * to 0 but would be settable from the command line or  
@@ -716,7 +734,7 @@ ini_cb=cb;
    org_width = width = a+ca*ori_font_width; 
    org_height = height = b+cb*ori_font_height;  
    x=y=0;
-   printf("%s=%dx%d\n",icon_name,width,height);
+   fprintf(stderr,"%s=%dx%d\n",icon_name,width,height);
 
    size_hints->min_width = width;   /* Startup width/haight */
    size_hints->min_height = height; /* are minimal */ 
@@ -815,13 +833,14 @@ ini_cb=cb;
 
     opened=1;
     atexit(close_plot);
-    signal(SIGPIPE,SigPipe); 
+    if(signal(SIGPIPE,SigPipe)!=SIG_ERR && trace)
+	  fprintf(stderr,"SIGPIPE handler instaled\n");
     
     while(!input_ready()); /* Wait for expose */ 
 
     /* Czysci zeby wprowadzic ustalone tlo */
     if(trace)
-	printf("Background is %d\n",(int)bacground);
+	fprintf(stderr,"Background is %d\n",(int)bacground);
     clear_screen();
 
     return 1;
@@ -839,8 +858,8 @@ return ini_a+(ini_ca*font_width)/mulx;/* Window size */
 
 int  char_height(char znak)
 {
-int pom=font_height/muly;
-if(pom<1)pom=1;
+int pom=(font_height+muly)/muly;
+/*if(pom<1)pom=1;*/
 return pom;
 }
 
@@ -872,9 +891,8 @@ return pom;
 void flush_plot()
 /* --------//---------- uzgodnienie zawartosci ekranu */
 {
-/* Read_XInput(); * Oraz sprawdzenie czy nie ma zdarzen */
 if(trace)
-	printf("FLUSH %s",icon_name);
+	fprintf(stderr,"FLUSH %s",icon_name);
 if(animate)
 	{/* Wyswietlenie bitmapy */
 	XCopyArea(display, cont_pixmap, win, gc,
@@ -882,11 +900,11 @@ if(animate)
            width, height,  
            0/*dest_x*/, 0/*dest_y*/);
         if(trace)
-		printf("DOING BITBLT"); 
+		fprintf(stderr,"DOING BITBLT"); 
 	}
 XFlush(display);
 if(trace)
-	printf(" XFLUSH\n");
+	fprintf(stderr," XFLUSH\n");
 error_count=error_limit;	
 }
 
@@ -903,12 +921,19 @@ int  input_ready()
 if(first_to_read) 
 	return 1;
 
-Read_XInput(); /* Sprawdzenie czy nie ma zdarzen */
-
-if(buforek[0]!=NODATA)
-	return 1;
-   else
-	return 0;
+if(XPending(display)!=0) 	/* Sprawdzenie czy nie cdma zdarzen */
+	{			/*SA JAKIES!*/
+        buforek[0]=NODATA; 	/*Asekuranctwo */
+	Read_XInput(); 		/* Przetwarzanie zdarzen */
+        if(buforek[0]!=NODATA)	/* Jest cos do zwrocenia jako znak */
+           {
+	   first_to_read=buforek[0]; /*Zostanie przeczytane przez get_char() */
+           buforek[0]=NODATA;  	
+	   return 1;		/* Wiec mozna wywolac get_char() */
+	   }            
+	}
+ 
+return 0;
 }
 
 int  set_char(int c)	
@@ -939,19 +964,7 @@ if(pipe_break==1)
 	return EOF;
 	}
 
-/* Fist 10000 times doing fast. Nexts much slower. */
-while(buforek[0]==NODATA)
-	{
-	Read_XInput();
-	if(trace)
-	if(DelayAction%1000==0)
-		fprintf(stderr,"%s[%d] %d waiting!\n",icon_name,getpid(),DelayAction);
-	sleep(DelayAction/10000);/* Po 10tysiacach obrotow petli wpada w stan czekania */
-	if(++DelayAction>19999)
-		{
-		DelayAction=10000;
-		}
-	} 
+Read_XInput();
 pom=buforek[0];
 buforek[0]=NODATA;
 return pom;
@@ -1167,7 +1180,7 @@ if( line_width!=(mulx>muly?muly:mulx) )
 	line_width=(mulx>muly?muly:mulx);
 	if(trace)
 		{
-		printf("Set line width to %d\n",line_width);
+		fprintf(stderr,"Set line width to %d\n",line_width);
 		}
 	XSetLineAttributes(display, gc,line_width,
 		 LineSolid,  CapRound, JoinRound);
@@ -1186,12 +1199,12 @@ CurrForeground=-1;
 /* Clear screen and bitmap */
 if(!animate)
 	{
-	if(trace) printf("Clear window\n");
+	if(trace) fprintf(stderr,"Clear window\n");
     	XFillRectangle(display,win , gc, 0,0,width,height);
 	}
 if(buffered)
 	{
-	if(trace) printf("Clear pixmap\n");
+	if(trace) fprintf(stderr,"Clear pixmap\n");
 	XFillRectangle(display,cont_pixmap , gc, 0,0,width,height);
 	}
 }
@@ -1290,7 +1303,7 @@ if(UseGrayScale)
   for(k=0;k<255;k++)
     { 
     long wal=k;
-    /*printf("%u %ul\n",k,wal);*/
+    /*fprintf(stderr,"%u %ul\n",k,wal);*/
     RGBarray[k].red=wal;
     RGBarray[k].green=wal;
     RGBarray[k].blue=wal;
@@ -1316,7 +1329,7 @@ RGBarray[255].green=0xffff;
 RGBarray[255].blue=0xffff;
 
 if(trace)
-	printf("%s\n","SetScale completed");
+	fprintf(stderr,"%s\n","SetScale completed");
 }
 
 void set_rgb(int color,int r,int g,int b)
@@ -1331,7 +1344,7 @@ pixels[0]/*=pom.pixel*/=Scale[color];
 pom.pixel=0;	
 if(XAllocColor(display,colormap,&pom)!=0)
     {
-    Scale[color]=pom.pixel;	
+    Scale[color]=pom.pixel;
     /*Niepewna metoda,lub wrecz zla */
     XFreeColors(display,colormap,pixels, 1,0);
     }
@@ -1339,5 +1352,10 @@ if(XAllocColor(display,colormap,&pom)!=0)
 
 
 /*#pragma exit close_plot*/
+
+
+
+
+
 
 
