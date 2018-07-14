@@ -1,2 +1,3 @@
 # sym_shell
-Simulation Shell for C/C++ (started 20 years ago)
+Simulation Shell library for C/C++ (started more than 20 years ago ~ 1995)
+Graphics & data visualisation portable under unix, linux, windows & DOS (go32) 
