@@ -1,23 +1,22 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
-//			Prosty program SYMSHELLA implememtuj¹cy moder Solomona
+//	  Prosty program SYMSHELLA implememtuj¹cy model Solomona i wariacje na temat
 //-----------------------------------------------------------------------------------------
+//    - s¹ to przyk³ady probablistycznych turmitów (krewniaków Mrówki Langtona)
 ///////////////////////////////////////////////////////////////////////////////////////////
 #define USES_ASSERT
+#define USES_SIGNAL
 #define USES_STDIO
 #define USES_STDLIB
 #define USES_STRING
-#define USES_MATH
-#define USES_FLOAT
-#define USES_SIGNAL
-#define USES_SYMULATION_SHELL /* rownowazne #include "symshell.h" */
+#include "INCLUDE/uses_wb.hpp"
 
-//#include <float.h>
-//#include <signal.h>
+#include "INCLUDE/wb_ptr.hpp"
+#include "INCLUDE/wb_rand.hpp"
+#include "SYMSHELL/symshell.h"
 #include <setjmp.h>
-#include "wb_uses.h"
 
-#include "wb_ptr.hpp"
-#include "wb_rand.hpp"
+using namespace wbrtm;
+
 
 #define TITLE_MAIN "SORIN FAMILY OF MODELS v. 1.06 (by Wojciech Borkowski)"
 
@@ -52,7 +51,7 @@ RandSTDC TheRndGen;//Standardowy generator jezyka C
 RandG TheRndGen;//Generator z Numerical Recipes
 #endif
 
-const int bok=256;
+const int bok=256;//WIELKOŒC BOKU ŒWIATA
 
 int  ox=-1; //Stare pozycje - potrzebne w algorytmie z "predkoscia"
 int  oy=-1;
@@ -73,10 +72,10 @@ wb_dynmatrix<my_count>      Odwiedziny;//Swiat symulacji
 wb_dynarray<unsigned long>  LicznikiV; //Liczniki w poszczegolnych przedzialach kolorów
 wb_dynarray<unsigned long>  LicznikiC; //Liczniki w poszczegolnych przedzialach kolorów
 
-void full_replot();//Repaint all screen - prymitywne ale skuteczne
-void vals_replot();
-void freq_replot();
-void status_replot();
+void full_replot();//Odrysowuje wszystko - prymitywne ale skuteczne
+void vals_replot();//Odrysowuje stronê wartoœci
+void freq_replot();//Odrysowuje stronê frekwencji
+void status_replot();//Tylko status odrysowuje
 
 inline bool sprawdz_skale(double min,double max,double& DzielnikSkali,int jeden)
 {
@@ -88,6 +87,7 @@ inline bool sprawdz_skale(double min,double max,double& DzielnikSkali,int jeden)
         ok=true;//Jesli skala jest (juz) OK to to zostaje true
         if(min>0)
             pmin=-log10(min);
+
         if(pmin/DzielnikSkali>jeden)
         {
             DzielnikSkali*=2;
@@ -156,7 +156,6 @@ void init()
 
     clear_screen();
     flush_plot();
-
 }
 
 void every_monte()
@@ -178,6 +177,7 @@ void every_monte()
         freq_replot();
     }
 }
+
 
 void one_step_sorin()//
 {
@@ -205,9 +205,8 @@ void one_step_sorin()//
                                 { x,           (y-1+bok)%bok},
                                 { x,           (y+1)%bok}
                                };//Sa cztery kierunki
-
          
-    //Szukanie wlasciwego kierunku    
+    //Szukanie wlasciwego kierunku - w niektórych algorytmach zmiany mo¿e byæ konieczne sprawdzenie s¹siadów   
     int sta=TheRndGen.Random(4);//Losowy poczatek szukania
     my_type pomv,locmax=-DBL_MAX;
     int dir=-1;
@@ -268,7 +267,7 @@ void one_step_random_change()//Agent krazy jak w klasycznym, ale zmiany nie sa z
         plot(x,y,color_v(val));
     }
 
-    //Decyzja o kroku który wykonujemy na nowa pozycje
+    //Decyzja o kroku który wykonujemy na nowa pozycje - w niektórych algorytmach zmiany mo¿e byæ konieczne sprawdzenie s¹siadów   
     struct {int nx,ny;} dirs[4]={ // <-- Tablica nowych pozycji do wyboru
                                 {(x-1+bok)%bok, y},
                                 {(x+1)%bok,     y},
@@ -346,7 +345,7 @@ void one_step_plus_minus()
                                };//Sa cztery kierunki
 
          
-    //Szukanie wlasciwego kierunku    
+    //Szukanie wlasciwego kierunku - w niektórych algorytmach zmiany mo¿e byæ konieczne sprawdzenie s¹siadów      
     int sta=TheRndGen.Random(4);//Losowy poczatek szukania
     my_type pomv,locmax=-DBL_MAX;
     int dir=-1;
@@ -393,7 +392,11 @@ void one_step_without_tabu()
     if(TheRndGen.DRand()<0.5)
        val/=2; 
     else 
-       val*=2;
+	{
+		if(val<DBL_MAX/2)
+			val*=2;
+		else val=DBL_MAX;
+	}
     if(val>vmax) {vmax=val;vchenged=true;}//Sprawdzamy czy max sie nie powiekszylo
     if(val<vmin) {vmin=val;vchenged=true;}//... i czy min sie nie pomniejszylo
           
@@ -409,7 +412,7 @@ void one_step_without_tabu()
                                 { x,           (y+1)%bok}
                                };//Sa cztery kierunki
     
-    //Szukanie wlasciwego kierunku    
+    //Szukanie wlasciwego kierunku  - w niektórych algorytmach zmiany mo¿e byæ konieczne sprawdzenie s¹siadów   
     int sta=TheRndGen.Random(4);//Losowy poczatek szukania
     my_type pomv,locmax=-DBL_MAX;
     int dir=-1;
@@ -458,7 +461,8 @@ void one_step_random_walk()
     Swiat[x][y]=val;
     if(czysc) plot(x,y,color_v(val));
 
-    //Decyzja o kroku który wykonujemy na nowa pozycje
+    //Szukanie wlasciwego kierunku  - w niektórych algorytmach zmiany mo¿e byæ konieczne sprawdzenie s¹siadów, ale nie tu!   
+    //Decyzja o kroku który wykonujemy na nowa pozycje 
     int i=TheRandG.Random(3)-1;
     int j=TheRandG.Random(3)-1;
     i+=x+bok;
@@ -498,6 +502,8 @@ void one_step_random_jump()
     Swiat[x][y]=val;
     if(czysc) plot(x,y,color_v(val));
 
+	
+    //Szukanie wlasciwego kierunku  - w niektórych algorytmach zmiany mo¿e byæ konieczne sprawdzenie s¹siadów, ale nie tu!   
     //Decyzja o skoku na nowa pozycje
     int i=TheRandG.Random(bok);
     int j=TheRandG.Random(bok);
@@ -680,7 +686,7 @@ void fpcheck( void );
 /*  OGOLNA FUNKCJA MAIN */
 /************************/
 
-main(int argc,char* argv[])
+int main(int argc,const char* argv[])
 {
     int i=0,xpos=0,ypos=0,click=0;//Myszowate -na razie niepotrzebne
     int cont=1;//flaga kontynuacji
@@ -688,7 +694,8 @@ main(int argc,char* argv[])
     printf("%s\n\n",Title);
     model_select();
     printf("\nSelected model: %s %dx%d\n\n",Title,bok,bok);
-    //INICJACJA APLIKACJI    
+    
+	//INICJACJA APLIKACJI    
     TheRndGen.Reset();   
     mouse_activity(0);
     set_background(0);
@@ -708,15 +715,18 @@ main(int argc,char* argv[])
     _controlfp( _EM_INEXACT,_MCW_EM );//Trzeba wylaczyc inexact bo jest niemal wszedzie!
     //_controlfp( _EM_OVERFLOW+_EM_UNDERFLOW,_MCW_EM );
 
-   /* Set up floating-point error handler. The compiler
-    * will generate an error because it expects
+   /* Set up floating-point error handler. Some compilers
+    * may generate an error because they expects
     * signal-handling functions to take only one argument.
     */
+#ifdef _NDEBUG 
     if( signal( SIGFPE, (void (__cdecl *)(int))fphandler ) == SIG_ERR )
     {
         fprintf( stderr, "Couldn't set SIGFPE\n" );
         abort();   
     }
+#endif
+
     // others inits
     init();
     full_replot();
