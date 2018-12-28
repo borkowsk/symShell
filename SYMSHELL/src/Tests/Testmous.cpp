@@ -3,16 +3,19 @@
 //-----------------------------------------------------------------------------------------
 //Demonstruje obsluge zdarzen myszowych. Zapamientuje punkty klikniec i potrafi odrysowac
 //W tle miga napisem "CZEKAM"
+//POD Dev-Cpp potrzebne s¹ dwie bibloteki:
+//".../Dev-Cpp/lib/libgdi32.a"
+//"...Dev-Cpp/lib/libcomdlg32.a"
 ///////////////////////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include "../symshell.h"
-#include "../../INCLUDE/wb_ptr.hpp"
+#include "../wb_ptr.hpp"
 using namespace std;
 using namespace wbrtm;
 
 #define KOLOR 128
 #define WAIT 20000
-const max_points=1024;//Ile maksymalnie punktow zapamientywac
+const int max_points=1024;//Ile maksymalnie punktow zapamientywac
 
 struct point
 {
@@ -26,6 +29,7 @@ istream& operator >> (istream& i,point& p)
 };
 
 wb_dynarray< point >  table(max_points);
+
 int index=-1;//Poczatkowy stan indeksu
 
 void replot()
@@ -45,7 +49,10 @@ int xpos,ypos,click;
 if(get_mouse_event(&xpos,&ypos,&click)!=-1)
 	{
 	if(index<max_points-1)
+	{
 		index++;
+		printf(" Punkt %d ",index);
+    }
 	table[index].x=xpos;
 	table[index].y=ypos;
 	plot(xpos,ypos,KOLOR-100);
@@ -68,19 +75,20 @@ init_plot(xsize,ysize,0,0);
 
 while(1)
 { //printf
-char pom;
+int pom;
 
 if(input_ready())
   {
-  pom=get_char();
+  pom=get_char();//printf("What??? %c  ",pom);
   switch(pom)
   {
   case '\r': replot();break;
-  case '\b': read_mouse();break;
+  case '\b': //print(0,100,"Mouse");
+             read_mouse();break;
   case EOF:
   case 'q':goto END;
   default:
-	print(0,0,"What??? %c",pom);break;
+	print(0,100,"What??? %c  ",pom);break;
   }
 }
 
@@ -96,9 +104,20 @@ flush_plot();
 
 END:
 ;
+//system("PAUSE");
 close_plot();
 return 0;
 }
 
 /* For close_plot() */
 int WB_error_enter_before_clean=0;/* Zamyka okno nie czekajac */
+/********************************************************************/
+/*		TEST CODE FOR WBRTM  light version 2009                     */
+/********************************************************************/
+/*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
+/*            W O J C I E C H   B O R K O W S K I                   */
+/*    Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
+/*        WWW:  http://wwww.iss.uw.edu.pl/borkowski/                */
+/*                                                                  */
+/*                               (Don't change or remove this note) */
+/********************************************************************/
