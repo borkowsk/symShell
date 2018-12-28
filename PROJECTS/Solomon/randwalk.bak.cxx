@@ -1,20 +1,16 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
-//			Prosty program SYMSHELLA implememtuj¹cy model Solomona
-//-----------------------------------------------------------------------------------------
-//    - jest to przyk³ad probablistycznego turmita (krewniaka Mrówki Langtona)
+//			Prosty program SYMSHELLA implememtuj¹cy moder Solomona
 //-----------------------------------------------------------------------------------------
 ///////////////////////////////////////////////////////////////////////////////////////////
 #define USES_ASSERT
 #define USES_STDIO
 #define USES_STDLIB
 #define USES_STRING
-#include "INCLUDE/uses_wb.hpp"
+#define USES_SYMULATION_SHELL /* rownowazne #include "symshell.h" */
 
-#include "INCLUDE/wb_ptr.hpp"
-#include "INCLUDE/wb_rand.hpp"
-#include "SYMSHELL/symshell.h"
-
-using namespace wbrtm;
+#include "wb_uses.h"
+#include "wb_ptr.hpp"
+#include "wb_rand.hpp"
 
 typedef double my_type;
 bool losuj=true;
@@ -84,8 +80,7 @@ void one_step()
 void status()
 {
     //Linia statusu
-    //print(0,screen_height()-char_height('X'),"%lu kr.m-c=%lu kr.agenta",ile_monte_carlo,ile_krokow);      
-	print(0,screen_height()-char_height('X'),"%lu m-c.st=%lu agent's.steps",ile_monte_carlo,ile_krokow);      
+    print(0,screen_height()-char_height('X'),"%lu k.m-c=%lu k.agenta",ile_monte_carlo,ile_krokow);      
 }
 
 
@@ -122,7 +117,7 @@ void replot()//Repaint all screen - prymitywne ale skuteczne
 /*  OGOLNA FUNKCJA MAIN */
 /************************/
 
-int main(int argc,const char* argv[])
+main(int argc,char* argv[])
 {
     int i=0,xpos=0,ypos=0,click=0;//Myszowate -na razie niepotrzebne
     int cont=1;//flaga kontynuacji
