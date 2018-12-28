@@ -1,6 +1,8 @@
 //SYMSHELL FOR MS WINDOWS - PROGRAMMED BY W.Borkowski BASED OD Microsoft EXAMPLES
 //-------------------------------------------------------------------------------
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Product identifier string defines
 #define APPNAME       SymShell
 
@@ -8,8 +10,13 @@
 #define IDS_APPNAME                     1
 #define IDS_DESCRIPTION                 2
 #define IDI_APPICON                     101
+
 #define IDM_SIGNAL_COMMAND				40004
 #define IDM_EXIT						40005
+
+/* Aktualne rozmiary znaku wg. skali okna Windows*/
+int  raw_char_height(void);
+int  raw_char_width(void);
 
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
@@ -87,7 +94,9 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 // Global variable declarations.
 
 extern HINSTANCE hInst;          // The current instance handle
+extern HWND MyHwnd;				 // Okno aplikacji
 extern char      szAppName[];    // The name of this application
+extern char      szClassName[];  // The name of window class
 extern char      szTitle[];      // The title bar text
 
 // **TODO**  For NON-MDI applications, uncomment line 1 below and comment
@@ -140,13 +149,18 @@ typedef struct _MSDI
     // dispatch table and call the appropriate handler function.
 LRESULT DispMessage(LPMSDI, HWND, UINT, WPARAM, LPARAM);
 
-    // Message dispatch information for the main window
+// Message dispatch information for the main window
 extern MSDI msdiMain;
 
+#ifdef __cplusplus
+}
+#endif
+
+/*
 //VERSIONING SUPPORT
 #ifdef WIN32
 #include <winver.h>
 #else
 #include <ver.h>
 #endif
-
+*/
