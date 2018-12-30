@@ -14,9 +14,23 @@
 #ifndef __WB_PTR_HPP__
 #define __WB_PTR_HPP__
 
+#ifndef HIDE_WB_PTR_IO
+#define HIDE_WB_PTR_IO 0
+#endif
+#ifndef DEBUG_WB_PTR
+#define DEBUG_WB_PTR 0
+#endif
+
+
+#if	HIDE_WB_PTR_IO != 1
+#include <ostream>
+#include <istream>
+#include <iostream>
+using namespace std;
+#endif
+
 #include <stdarg.h>			//Bo jest konstruktor z nieznana liczba parametrow
 #include <cassert>
-#include <iostream>
 
 #include "platform.hpp"
 #include "wb_clone.hpp"
@@ -29,14 +43,6 @@
 #pragma warning( disable : 4521 4522 )	//multiple copy constructor/operator -bo osobne dla const char* i char*
 //#pragma warning( disable : 4512 )		//assignment operator could not be generated
 #endif // _MSC_VER > 1000
-
-#ifndef HIDE_WB_PTR_IO
-#define HIDE_WB_PTR_IO 0
-#endif
-
-#ifndef DEBUG_WB_PTR
-#define DEBUG_WB_PTR 0
-#endif
 
 #if DEBUG_WB_PTR == 1
 #define WBPTRLOG( _P_ )  {std::cerr<<((void*)this)<<"->"<< _P_ <<'\n';}
@@ -97,7 +103,7 @@ PointedType* operator -> () const;//Dodany operator -> dla wskaznika do klasy/st
 
 //Jeszcze jedno jawne przekazywanie wskaŸnika, tyle ¿e zwracaj¹ce wartoœæ. Mo¿e gdzieœ u¿ywane
 wb_ptr& set(PointedType* nini) { this->take(nini);return *this;};
-#pragma obsolete set
+//#pragma obsolete set //Borland?
 
 //Konstruktor klonujacy nie ma zastosowania do klas abstrakcyjnych (What???)
 //wb_ptr(const wb_ptr<T>& nini):wb_sptr<T>(clone(nini.get_ptr_val()))
@@ -115,11 +121,14 @@ class wb_pchar:public wb_sptr<char>
 ////////////////////////////////////////////////////////////////////////////////
 {
 public:
-explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
+	          wb_pchar(wb_pchar& nini);//Konstruktor sztafetuj¹cy
+
+explicit      wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 	{ if(s>0 && (ptr=new char[s])!=NULL ) *ptr='\0'; }
-explicit wb_pchar(const wb_pchar& nini); //Konstruktor klonuj¹cy
-explicit wb_pchar(wb_pchar& nini);//Konstruktor sztafetuj¹cy
-explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
+explicit     wb_pchar(const char* ini);  //Niby bezpieczny bo tylko kopiuje dane
+explicit     wb_pchar(const wb_pchar& nini); //Konstruktor klonuj¹cy
+
+
 ~wb_pchar() { dispose();}         //Destruktor
 void finalise() { dispose(); } //Wywolanie rownowa¿ne destruktorowi
 void dispose() //Zwalnia zaalokowan¹ pamiêc. Jak u¿yje dziedziczonego to siê pewnie nic nie stanie, ale...
@@ -151,8 +160,6 @@ friend const char* strstr(const wb_pchar& what,const char* s); //Atrapa c-owego
 friend bool replace(wb_pchar& bufor,const char* forrep,const char* whatins,bool fullwords,unsigned startpos=0);//case sensitive bo brak funkcji w rodzaju stristr
 //Wstawia lancuch do bufora na okreslonej pozycji - bufor jest sztafetowany(?) TODO!!!
 friend bool insert(wb_pchar& bufor,unsigned pos,const char* whatins);
-//Implementacja zapisu na strumien ze sprawdzaniem czy trzeba w \"
-static void write(ostream& s,const char* p,char enclos='\"');
 
 //explicit wb_pchar(char* ini): wb_sptr<char>(ini) //Dwuznacznosc semantyczna, wymusza jawne decyzje
 //		{}//Przypisanie danych
@@ -279,8 +286,9 @@ void fill(const T& Val);
 
 };
 
-//Implementacja niektórych wiêkszych metod
-//////////////////////////////////////////////////
+
+//IMPLEMENTACJE METOD
+////////////////////////////////////////////////////////////////////////////////
 template<class T>
 inline size_t wb_dynmatrix<T>::alloc(size_t y,size_t x)
 	{
@@ -314,35 +322,7 @@ inline void wb_dynmatrix<T>::fill(const T& Val)
         }
     }
 
-//Deklaracje I/O dla inteligentnych wskaznikow
-//implementacja musi byc w innym pliku, i to raczej cpp ni¿ hpp
-/////////////////////////////////////////////////////////////////
-#if	HIDE_WB_PTR_IO != 1
 
-template<class T>
-ostream& operator<<(ostream&,const wb_sptr<T>&);
-template<class T>
-istream& operator>>(istream&,wb_sptr<T>&);
-
-ostream& operator<<(ostream&,const wb_sptr<char>&);
-istream& operator>>(istream&,wb_sptr<char>&);
-ostream& operator<<(ostream&,const wb_pchar&);
-istream& operator>>(istream&,wb_pchar&);
-
-template<class T>
-ostream& operator<<(ostream&,const wb_dynarray<T>&);
-template<class T>
-istream& operator>>(istream&,wb_dynarray<T>&);
-
-template<class T>
-ostream& operator<<(ostream&,const wb_dynmatrix<T>&);
-template<class T>
-istream& operator>>(istream&,wb_dynmatrix<T>&);
-#endif
-
-
-//IMPLEMENTACJE METOD
-////////////////////////////////////////////////////////////////////////////////
 template<class PointedType> inline //wb_sptr::
 void wb_sptr<PointedType>::dispose()
 	{
@@ -469,21 +449,23 @@ wb_pchar::wb_pchar(const char* ini):wb_sptr<char>(NULL)  //Tylko dane
 	ptr=clone_str(ini);//Kopiowanie danych
 	}
 
-//PONIZSZY:Dwuznacznosc semantyczna. Konieczne w zasadzie do alokacji
+//PONIZSZY:
+//Dwuznacznosc semantyczna. Konieczne w zasadzie do alokacji
 //Ale to mozna zrobic konstruktorem z integerem
 //wb_pchar::wb_pchar(char* ini):
 //			wb_sptr<char>(ini)
 //		{}//Przypisanie danych
+
 inline
 wb_pchar::wb_pchar(const wb_pchar& nini):wb_sptr<char>(NULL)
 	{																			WBPTRLOG( "wb_pchar::COPY CONSTRUCTOR :"<<(nini.ptr?nini.ptr:"@") )
-	ptr=clone_str(nini.get_ptr_val());
-	}//Kopiowanie danych
+	ptr=clone_str(nini.get_ptr_val());//Kopiowanie danych
+	}
 
 inline
 wb_pchar::wb_pchar(wb_pchar& nini):wb_sptr<char>(nini)
 	{																			WBPTRLOG( "wb_pchar::TRANSFER CONSTRUCTOR :"<<(ptr?ptr:"@") )
-																				assert(nini.ptr==NULL);//Inicjator traci dane. Jak nie to znaczy ze zaszlo niezamierzone kopiowanie
+	  /* tylko test */															assert(nini.ptr==NULL);//Inicjator traci dane. Jak nie to znaczy ze zaszlo niezamierzone kopiowanie
 	}
 
 inline
@@ -786,6 +768,19 @@ void wb_dynarray<T>::shift_left(size_t index)
 	memcpy(ptr+(size-1),bufor,sizeof(T));
 }
 
+/*
+template<class T> inline
+void wb_dynarray<T>::mingle(size_t N) //Zamienia miejscami N par
+//Ale musia³by mieæ zawsze dostêp do randomizera, a zastosowanie jest rzadkie raczej
+{
+	char bufor[sizeof(T)];														assert(ptr!=NULL);
+																				assert(index<size);
+	if(index>=size-1) return;//Nic nie trzeba robic
+	memcpy(bufor,ptr+index,sizeof(T));
+	...
+}
+*/
+
 template<class T> inline
 void wb_dynarray<T>::copy_from(const T Where[],size_t how_many_elements)
 {																				assert(how_many_elements<=size);
@@ -797,7 +792,6 @@ void copy_from(const wb_dynarray<T>& Where)
 {																				assert(Where.get_size()<=size);
     memcpy(ptr,Where.get_ptr_val(),Where.get_size()*sizeof(T));
 }
-
 
 //"ZAPRZYJANIONE" FUNKCJE POMOCNICZE
 /////////////////////////////////////
@@ -853,11 +847,42 @@ inline void fill(wb_dynarray<T>& Tab,const T& Val)
 	Tab.fill(Val);
 }
 
+//Deklaracje I/O dla inteligentnych wskaznikow
+//implementacja musi byc w innym pliku, i to raczej cpp ni¿ hpp
+/////////////////////////////////////////////////////////////////
+#if	HIDE_WB_PTR_IO != 1
+
+template<class T>
+ostream & operator<<(ostream&, const wb_sptr<T>&);
+
+template<class T>
+istream& operator>>(istream&,wb_sptr<T>&);
+
+ostream& operator<<(ostream&,const wb_sptr<char>&);
+istream& operator>>(istream&,wb_sptr<char>&);
+ostream& operator<<(ostream&,const wb_pchar&);
+istream& operator>>(istream&,wb_pchar&);
+
+template<class T>
+ostream& operator<<(ostream&,const wb_dynarray<T>&);
+template<class T>
+istream& operator>>(istream&,wb_dynarray<T>&);
+
+template<class T>
+ostream& operator<<(ostream&,const wb_dynmatrix<T>&);
+template<class T>
+istream& operator>>(istream&,wb_dynmatrix<T>&);
+
+//Iplementacja zapisu lancucha znaków na strumien ze sprawdzaniem czy trzeba w \"
+void escaped_pchar_write(std::ostream& s,const char* p,char enclos='\"');
+
+#endif
+
 
 } //namespace  wb_rtm
 
 /********************************************************************/
-/*			          WBRTM  version 2012                           */
+/*			        WBRTM  version 2013-09-23                       */
 /********************************************************************/
 /*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
 /*            W O J C I E C H   B O R K O W S K I                   */
