@@ -38,17 +38,17 @@ unsigned strtorgb(const char *s, char **endptr)
 
 		char* token=strtok(pom.get_ptr_val(),",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		unsigned val=strtoul(token,&endptr2,10);
+		unsigned val=strtounsigned(token,&endptr2);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtoul(token,&endptr2,10);
+		val=256*val+strtounsigned(token,&endptr2);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,")");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtoul(token,&endptr2,10);
+		val=256*val+strtounsigned(token,&endptr2);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		return val;
@@ -61,22 +61,22 @@ unsigned strtorgb(const char *s, char **endptr)
 
 		char* token=strtok(pom.get_ptr_val(),",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		unsigned val=strtoul(token,&endptr2,10);
+		unsigned val=strtounsigned(token,&endptr2);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtoul(token,&endptr2,10);
+		val=256*val+strtounsigned(token,&endptr2);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtoul(token,&endptr2,10);
+		val=256*val+strtounsigned(token,&endptr2);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,")");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtoul(token,&endptr2,10);
+		val=256*val+strtounsigned(token,&endptr2);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		return val;
