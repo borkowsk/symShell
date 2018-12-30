@@ -7,10 +7,10 @@
 
 unsigned strtorgb(const char *s, char **endptr)
 {  //char* endptr=NULL;
-   while(isblank(*s)) s++;   //Usun biale
+   while(isblank(*s)) s++;   //Usun biale    // strtol   ?
 
    if(s[0]=='0' && tolower(s[1])=='x' )
-		return  strtoul(s,endptr,16);    // strtol
+		return  strtoul(s,endptr,16);
    else
    if(tolower(s[0])=='x')
 		return  strtoul(s+1,endptr,16);
