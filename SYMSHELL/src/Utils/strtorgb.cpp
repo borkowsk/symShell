@@ -44,7 +44,7 @@ unsigned strtorgb(const char *s, char **endptr)
 		return val;
    }
    else
-   if(tolower(s[0])=='a' && tolower(s[0])=='r' &&  tolower(s[1])=='g' && tolower(s[2])=='b' && tolower(s[3])=='(')
+   if(tolower(s[0])=='a' && tolower(s[1])=='r' &&  tolower(s[2])=='g' && tolower(s[3])=='b' && tolower(s[4])=='(')
    {
 		wbrtm::wb_pchar pom(s+5);
 		char* endptr2=NULL;
