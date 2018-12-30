@@ -168,6 +168,64 @@ T* ptr;		//wskaznik do wewnetrznego wektora
 size_t size;//rozmiar aktualnie zaalokowanego wektora
 public:
 	//konstruktor alokujacy
+	explicit wb_dynarray(size_t s=0);
+	//konstruktor wieloparametrowy inicjujacy itemy
+	explicit wb_dynarray(size_t s,T /*first,second,...*/...);
+	//konstruktor wypeniuaj¹cy kopiami FillVal
+	explicit  wb_dynarray(const T& FillVal,size_t s);
+
+	//Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
+	wb_dynarray(const wb_dynarray& nini):size(nini.size),ptr(nini.ptr)//!!! Mo¿e siê zdarzyæ, ¿e kopiujemy pust¹!
+		{																		WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
+		const_cast<wb_dynarray<T>&>(nini).ptr=NULL; //Wymuszenie transferowania nawet na obiekcie
+		const_cast<wb_dynarray<T>&>(nini).size=0;   //typu const!
+		}
+
+	//konstruktor transferujacy.    TODO
+	//Niestety uniemozliwia(³?) niektore konstrukcje, a jakos "zaslania" ten z "const wb_dynarray&"
+	//explicit wb_dynarray(wb_dynarray& nini):size(nini.size),ptr(nini.ptr)
+	//	{
+	//	WBPTRLOG( "wb_dynarray::TRANSFER CONSTRUCTOR("<<((void*)&nini)<<")" )
+	//	nini.ptr=NULL;
+	//	nini.size=0;
+	//	}
+	~wb_dynarray(); //destruktor zwalnia pamiec - po prostu wo³o dispose()
+
+size_t 	alloc(size_t s);  //"Pierwotna" alokacja wektora
+T*  	give_dynamic_ptr_val(size_t& outsize);  //Zabiera adres zpod zarzadu tablicy!!!
+void 	dispose();  	  //Dealokacja danych
+
+//Czy tablica zostala zalokowana
+int 	OK()   const { return ptr!=NULL; }
+int 	IsOK() const { return ptr!=NULL && size!=0; }
+size_t 	get_size() const	{ return size;}  //Rozmiar wewnetrznego wektora
+
+T& operator [] (size_t index) const;//pe³ny dostep do zawartoscu pojedynczego itemu
+
+T* get_ptr_val(size_t offset=0,size_t interest=0) const; //Daje bezposredni dostep do wewnetrznego wektora
+														 //ale nie wolno go zdealokowac!!!
+//Umieszczenie dynamicznie alokowanego wektora jako tablicy wewnatrz dynarray
+void take(T* iptr,size_t isiz);  //nic nie zwraca
+wb_dynarray<T>& set_dynamic_ptr_val(T* iptr,size_t isiz);//i zwraca *this
+//Transfer czyli przêjêcie zawartoœci od parametru typu wb_dynarray
+void take(wb_dynarray& nini);    //nic nie zwraca
+
+wb_dynarray<T>& operator = (wb_dynarray<T>& nini); //Transferujacy operator przypisania, zwraca *this
+
+//Rozne wygodne funkcje pomocnicze
+void fill(const T& FillVal); //Wype³nienie kopi¹ parametru
+void shift_left(size_t index);//Przemieszczenie pojedynczego elementu z pozycji 0 na koniec
+size_t expand(size_t s,const T& FillVal); //Rozszerzenie wektora - przydatne do rozbudowy tablicy
+										  //ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
+										  //podobnie jak poni¿sze metody, które te¿ opakowuj¹ memcpy
+size_t trunc(size_t s);//Skrócenie wektora - przydatne przy czytaniu (umo¿liwia oszczêdnoœæ pamiêci)
+void copy_from(const T Where[],size_t how_many_elements);//Kopiowanie zawartoœci
+void copy_from(const wb_dynarray<T>& Where); //Kopiowanie zawartoœci
+};
+
+//Implementacje wb_dynarray
+////////////////////////////////////////////////////////////////////////////////
+	//konstruktor alokujacy
 	explicit wb_dynarray(size_t s=0):size(s)
 		{
 		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )
@@ -429,8 +487,6 @@ void copy_from(const wb_dynarray<T>& Where)
     assert(Where.get_size()<=size);
     memcpy(ptr,Where.get_ptr_val(),Where.get_size()*sizeof(T));
 }
-
-};
 
 //Szablon prostej tablicy dwuwymiarowej
 //o dowolnej ilosci wierszy i dowolnej dlugosci kazdego wiersza.
