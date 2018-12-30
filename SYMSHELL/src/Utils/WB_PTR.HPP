@@ -116,7 +116,7 @@ explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 	{ if(s>0 && (ptr=new char[s])!=NULL ) *ptr='\0'; }
 
 ~wb_pchar()
-	{ if(ptr) delete [] ptr; ptr=NULL; }
+	{ if(ptr) delete [] ptr; ptr=NULL;/*dla sprawdzeñ*/}
 
 explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
 
