@@ -1,3 +1,4 @@
+#include <cctype>
 #include <cstdlib>
 //using namespace std;
 #include "INCLUDE/wb_ptr.hpp"
@@ -7,7 +8,7 @@
 
 unsigned strtorgb(const char *s, char **endptr)
 {
-   while(isblank(*s)) s++;   //Usun biale    // strtol   ?
+   while(isspace(*s)) s++;   //isblank() Usun biale       ?
 
    if(s[0]=='0' && tolower(s[1])=='x' )
 		return  strtoul(s,endptr,16);

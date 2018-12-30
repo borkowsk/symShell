@@ -39,9 +39,9 @@ double distance(double X1,double X2,double Y1,double Y2)
 	double dX=X2-X1;
 	double dY=Y2-Y1;
 	if(dX!=0 || dY!=0)
-	return sqrt(dX*dX+dY*dY);
+	  return sqrt(dX*dX+dY*dY);
 	else
-	return 0;
+	  return 0;
 }
 
 //#include "graphs.hpp"
@@ -249,7 +249,7 @@ static inline double sqr(const double& p){ return p*p;}
 void arrow(int x1,int y1,int x2,int y2,wb_color color,double size,double theta)
 {
 	//METODA LICZENIA Z OBRACANIA OSI STRZALKI
-	double A=(size>=1?size:size*std::sqrt(sqr(x1-x2)+sqr(y1-y2)));
+	double A=(size>=1 ? size : size * sqrt( sqr(x1-x2)+sqr(y1-y2) ));
 	double poY=double(y2-y1);
 	double poX=double(x2-x1);
 	set_pen(color,1,SSH_LINE_SOLID); // Ustala aktualny kolor linii za pomoca skladowych RGB
