@@ -6,7 +6,7 @@
 //Funkcja interpretuj¹ca string jako wartoœæ RGB
 //Dopuszczalne formaty to: xFFFFFF  b111111111111111111111111  rgb(255,255,255) RGB(255,255,255) oraz dziesiêtny oczywiœcie
 
-unsigned strtounsigned(const char *s, char **endptr)
+inline unsigned strtounsigned(const char *s, char **endptr)
 {
    while(isspace(*s)) s++;   //isblank() Usun biale       ?
    if(s[0]=='0' && tolower(s[1])=='x' )
@@ -82,5 +82,7 @@ unsigned strtorgb(const char *s, char **endptr)
 		return val;
    }
    else
-
+   {
+	   return strtounsigned(s,endptr);
+   }
 }
