@@ -112,7 +112,7 @@ wb_ptr& set(PointedType* nini) { this->take(nini);return *this;};
 //Pomiedzy obiektami wb_pchar bez atrybutu const zawartosc jest
 //jak zwykle "sztafetowana"!!!
 class wb_pchar:public wb_sptr<char>
-///////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 {
 public:
 explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
