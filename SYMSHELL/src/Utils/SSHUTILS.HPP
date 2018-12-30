@@ -1,5 +1,5 @@
 /*****************************************************************************************
-* Implementacja pomocniczych funkcji symshella wsposob juz niezalezny od platformy.
+* Implementacja pomocniczych funkcji symshella w sposob juz niezalezny od platformy.
 * Napisane PRAWIE NIEOBIEKTOWO ale w C++
 * Jest tu: print_width() , rect(), bar3D(), ...itp...
 *****************************************************************************************/
@@ -14,12 +14,21 @@
 #include "symshell.h"
 
 #ifndef M_PI		/* np MVC++ nie definiuje */
-#define M_PI        3.14159265358979323846
-#define M_PI_2      1.57079632679489661923
-#define M_PI_4      0.785398163397448309616
+#define M_PI        (3.14159265358979323846)
+#define M_PI_2      (1.57079632679489661923)
+#define M_PI_4      (0.785398163397448309616)
 #endif
 
 typedef ssh_color wb_color;
+
+extern unsigned lang_selector;//=0 //Dla zestawu funkcji lang(...)
+
+inline
+const char* lang(const char* def,const char* alt) 
+		{ if(lang_selector!=0) return alt;else return def;}
+inline
+const char* lang(const char* def,const char* alt1,const char* alt2) 
+		{ if(lang_selector==2) return alt2;if(lang_selector==1)return alt1; else return def;}
 
 const wb_color default_transparent=wb_color(-1);
 const wb_color default_color=default_transparent;
@@ -34,6 +43,8 @@ extern int def_cross_width;//=5;//Domyslna szerokosc krzyzyka
 extern int def_scale_width;//=10;//Domyslna szerokosc skali
 extern double def_arrow_size;//=15;   //Domyslna dlugosc grota strzalki
 extern double def_arrow_theta;//=M_PI/6.0+M_PI; //Domyslne rozwarcie grota strzalki
+
+
 
 
 struct settings_bar3d
@@ -57,6 +68,18 @@ const settings_bar3d* bar3d_config(settings_bar3d* st);
 void bar3d(int x,int y,int h,wb_color col1,wb_color col2);
 void bar3dRGB(int x,int y,int h,int R,int G,int B,int ShadowDiv);
 
+//Rysuje "od góry" g³ówkê z uszami skierowan¹ nosem w zadan¹ stronê
+void head(int x,int y,int r,wb_color color,double direction);
+
+//Rysuje dowolna strzalke od punktu x1y1 do x2y2
+void arrow(int x1,int y1,int x2,int y2,wb_color color,double size=def_arrow_size,double theta=def_arrow_theta);
+
+//Efektywnie rysuje pozioma strzalke
+void vert_arrow(int x1,int x2,int y,wb_color color,double size=def_arrow_size);
+
+//Efektywnie rysuje pionowa strzalke
+void hor_arrow(int x,int y1,int y2,wb_color  color,double size=def_arrow_size);
+
 //Rysuje kwadratowa ramke
 void rect(int x1,int y1,int x2,int y2,wb_color frame_c,int width=def_frame_width);
 
@@ -68,15 +91,6 @@ void hor_scale(int x1,int y1,int high=def_scale_width,wb_color start=0,wb_color 
 
 //Rysuje krzyzyk
 void cross(int x,int y,wb_color color,int width=def_cross_width);
-
-//Rysuje dowolna strzalke od punktu x1y1 do x2y2
-void arrow(int x1,int y1,int x2,int y2,wb_color color,double size=def_arrow_size,double theta=def_arrow_theta);
-
-//Efektywnie rysuje pozioma strzalke
-void vert_arrow(int x1,int x2,int y,wb_color color,double size=def_arrow_size);
-
-//Efektywnie rysuje pionowa strzalke
-void hor_arrow(int x,int y1,int y2,wb_color  color,double size=def_arrow_size);
 
 //Drukuje w obszarze nie wiekszym niz max_width. Zwraca width albo 0
 //wewnetrzny bufor ma nie wiecej niz 1024 znaki
@@ -91,10 +105,9 @@ extern "C" { int ViewHtml(const char* URL); }//From "symshell" but less or more 
 /********************************************************************/
 /*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
 /*            W O J C I E C H   B O R K O W S K I                   */
-/* Zaklad Systematyki i Geografii Roslin Uniwersytetu Warszawskiego */
-/*  & Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
-/*        WWW:  http://moderato.iss.uw.edu.pl/~borkowsk             */
-/*        MAIL: borkowsk@iss.uw.edu.pl                              */
+/*   Instytut Studiow Spolecznych Uniwersytetu Warszawskiego        */
+/*        WWW:  http://www.iss.uw.edu.pl/borkowski                  */
+/*        MAIL: wborkowski@uw.edu.pl                                */
 /*                               (Don't change or remove this note) */
 /********************************************************************/
 
