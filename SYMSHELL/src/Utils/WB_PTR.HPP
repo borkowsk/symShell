@@ -225,14 +225,13 @@ void copy_from(const wb_dynarray<T>& Where); //Kopiowanie zawartoœci
 
 //Implementacje wb_dynarray
 ////////////////////////////////////////////////////////////////////////////////
-	//konstruktor alokujacy
-	explicit wb_dynarray(size_t s=0):size(s)
-		{
-		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )
-															   //assert(size!=0);
-		if(size>0)	ptr=new T[s];
+
+template<class T> //konstruktor alokujacy
+explicit wb_dynarray<T>::wb_dynarray(size_t s=0):size(s)
+{																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )															   //assert(size!=0);
+	if(size>0)	ptr=new T[s];
 			else ptr=NULL;
-		}
+}
 
 	//konstruktor transferujacy. Niestety uniemozliwia niektore konstrukcje, a jakos "zaslania" ten z "const wb_dynarray&"
 	//wb_dynarray(wb_dynarray& nini):size(nini.size),ptr(nini.ptr)
