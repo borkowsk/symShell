@@ -40,7 +40,7 @@ using namespace std;
 int print_width(int x,int y,int maxwidth,wb_color col,wb_color bcg,const char* format,...)
 {
 char yust='L';
-const size_t BUFSIZE=1024;
+const int BUFSIZE=1024;
 int width=0;
 char bufor[BUFSIZE];
 if(format[0]=='%' && format[1]=='@')//Zostal podany sposob justowania
