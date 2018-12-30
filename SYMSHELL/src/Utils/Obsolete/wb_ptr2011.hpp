@@ -13,12 +13,19 @@
 #ifndef __WB_PTR_HPP__
 #define __WB_PTR_HPP__
 
-#ifndef HIDE_WB_PTR_IO 
+#include "platform.hpp"
+
+#if _MSC_VER > 1000
+#pragma warning( disable : 4521 4522 )	//multiple copy constructor/operator -bo osobne dla const char* i char* 
+//#pragma warning( disable : 4512 )		//assignment operator could not be generated 
+#endif // _MSC_VER > 1000
+
+#ifndef HIDE_WB_PTR_IO
 #define HIDE_WB_PTR_IO 0
 #endif
 
 #ifndef DEBUG_WB_PTR
-#define DEBUG_WB_PTR 1
+#define DEBUG_WB_PTR 0
 #endif
 
 #if DEBUG_WB_PTR == 1
@@ -30,8 +37,12 @@
 #include <stdarg.h>			//Jest konstruktor z nieznana liczba parametrow
 #include <assert.h>
 
+#ifdef NEW_FASHION_CPP
 #include <iostream>
 using namespace std;
+#else
+#include <iostream.h>
+#endif
 
 #include "wb_clone.hpp"
 
@@ -122,35 +133,33 @@ T*  give()
 
 
 //... i szablon dla typow strukturalnych
-template<class T>
-class wb_ptr:public wb_sptr<T>
+template<class PointedType>
+class wb_ptr:public wb_sptr<PointedType>
 /////////////////////////////////////////
 {
 public:
-	explicit wb_ptr(T* ini=NULL):wb_sptr<T>(ini)
-	{
-       WBPTRLOG( "wb_ptr::EXPLICIT FROM PTR CONSTRUCTOR :"<<ptr )
-    }
+	explicit wb_ptr(PointedType* ini=NULL):wb_sptr<PointedType>(ini)
+	{}
 
-	wb_ptr(wb_ptr& nini):wb_sptr<T>(nini)
+	wb_ptr(wb_ptr& nini):wb_sptr<PointedType>(nini)
 	{
-		WBPTRLOG( "wb_ptr::TRANSFER CONSTRUCTOR :"<<ptr )
+	   WBPTRLOG( "wb_ptr::TRANSFER CONSTRUCTOR :"<<ptr )
 	}
 
-//Konstruktor klonujacy nie ma zastosowania do klas abstrakcyjnych
-//wb_ptr(const wb_ptr<T>& nini):wb_sptr<T>(clone(nini.get_ptr_val()))		
+//Konstruktor klonujacy nie ma zastosowania do klas abstrakcyjnych (What???)
+//wb_ptr(const wb_ptr<T>& nini):wb_sptr<T>(clone(nini.get_ptr_val()))
 //	{
 //		WBPTRLOG( "wb_ptr::CLONE CONSTRUCTOR :"<<nini.ptr )
 //	}
 
-wb_ptr& set(T* nini)
+wb_ptr& set(PointedType* nini)
 	{
 	dispose(); 
 	ptr=nini;
 	return *this;
 	}
 
-wb_ptr& operator = (T* nini) 
+wb_ptr& operator = (PointedType* nini)
 	{ 	
 	return set(nini);
 	}
@@ -164,7 +173,7 @@ wb_ptr& operator = (T* nini)
 //	return *this; 
 //	}
 
-wb_ptr& operator = (wb_ptr<T>& nini) //nie sptr bo wtedy nieuprawnione rozszserzenie operacji
+wb_ptr& operator = (wb_ptr<PointedType>& nini) //nie sptr bo wtedy nieuprawnione rozszserzenie operacji
 	{ 
 	WBPTRLOG( "wb_ptr::TRANSFER oper = :"<<nini.ptr<<"->"<<ptr )
 	dispose(); 
@@ -172,7 +181,7 @@ wb_ptr& operator = (wb_ptr<T>& nini) //nie sptr bo wtedy nieuprawnione rozszserz
 	return *this; 
 	}
 
-wb_ptr& transfer_from(wb_ptr<T>& nini) //Jawnie nazwany operator przypisania
+wb_ptr& transfer_from(wb_ptr<PointedType>& nini) //Jawnie nazwany operator przypisania
 	{ 
 	dispose(); 
 	ptr=nini.give();
@@ -180,7 +189,7 @@ wb_ptr& transfer_from(wb_ptr<T>& nini) //Jawnie nazwany operator przypisania
 	}
 
 //Dodadany operator -> dla wskaznika do klasy/struktury
-T* operator -> () const
+PointedType* operator -> () const
 	{
 	assert(ptr!=NULL);
 	return ptr;
@@ -359,11 +368,11 @@ public:
 	//	nini.size=0;
 	//	}
 	
-	//Konstruktor "kopiujacy" - musi byc forsowany wiec jest niebezpieczny
+	//Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
 	wb_dynarray(const wb_dynarray& nini/*,bool copy=false*/):size(nini.size),ptr(nini.ptr)
 		{
 		WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
-																assert(size!=0);
+																//assert(size!=0); Mo¿e siê zdarzyæ, ¿e kopiujemy pust¹!
 		const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
 		const_cast<wb_dynarray<T>&>(nini).size=0;
 		}
@@ -613,7 +622,16 @@ void dispose()
 	}
 
 //Rozbudowana alokacja zstepujaca
-size_t alloc(size_t y,size_t x)
+size_t alloc(size_t y,size_t x);
+//Wype³nianie
+void fill(const T& Val);
+
+};
+
+//Implementacja niektórych wiêkszych metod
+//////////////////////////////////////////////////
+template<class T>
+inline size_t wb_dynmatrix<T>::alloc(size_t y,size_t x)
 	{
 	WBPTRLOG( "wb_dynmatrix::alloc("<<y<<','<<x<<")" )
 	assert(y>0);
@@ -633,7 +651,8 @@ size_t alloc(size_t y,size_t x)
 	return get_size();
 	}
 
-void fill(const T& Val)
+template<class T>
+inline void wb_dynmatrix<T>::fill(const T& Val)
     {
     size_t i,H=get_size();
     for(i=0;i<H;i++)//Po wierszach
@@ -643,9 +662,6 @@ void fill(const T& Val)
             (*this)[i][j]=Val;//Wypelnij ten element
         }
     }
-
-};
-
 
 //FUNKCJE POMOCNICZE
 /////////////////////////////////////
@@ -693,12 +709,12 @@ istream& operator>>(istream&,wb_dynmatrix<T>&);
 } //namespace
 
 /********************************************************************/
-/*			          WBRTM  light version 2009                     */
+/*			          WBRTM  version 2006                           */
 /********************************************************************/
 /*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
 /*            W O J C I E C H   B O R K O W S K I                   */
 /*    Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
-/*        WWW:  http://wwww.iss.uw.edu.pl/borkowski/                */
+/*        WWW:  http://wwww.iss.uw.edu.pl/~borkowsk/                */
 /*                                                                  */
 /*                               (Don't change or remove this note) */
 /********************************************************************/
