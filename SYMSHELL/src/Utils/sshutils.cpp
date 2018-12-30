@@ -91,7 +91,7 @@ while(Tab=strchr(bufor,'\t'))
 }
 */
 //Jak jest dluzsze niz miejsce to odcina z gwiazdka
-while( (width=string_width(bufor)) >maxwidth )
+while( (width=string_width(bufor.get())) > maxwidth )
 		{
 		int size=strlen(bufor);
 		if(size==1) break;
@@ -102,9 +102,9 @@ while( (width=string_width(bufor)) >maxwidth )
 if(width<=maxwidth)
 	{
 	switch(yust){
-	case 'L':printc(x,y,col,bcg,"%s",bufor);break;
-	case 'R':printc((x+maxwidth)-width,y,col,bcg,"%s",bufor);break;
-	case 'C':printc(x+maxwidth/2-width/2-1,y,col,bcg,"%s",bufor);break;
+	case 'L':printc(x,y,col,bcg,"%s",bufor.get());break;
+	case 'R':printc((x+maxwidth)-width,y,col,bcg,"%s",bufor.get());break;
+	case 'C':printc(x+maxwidth/2-width/2-1,y,col,bcg,"%s",bufor.get());break;
 	default:
 		;	}
 	return width;
