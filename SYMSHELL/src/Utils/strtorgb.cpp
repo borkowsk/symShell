@@ -24,14 +24,24 @@ unsigned strtorgb(const char *s, char **endptr)
    if(tolower(s[0])=='r' &&  tolower(s[1])=='g' && tolower(s[2])=='b' && tolower(s[3])=='(')
    {
 		wbrtm::wb_pchar pom(s+4);
+		char* endptr2=NULL;
+
 		char* token=strtok(pom.get_ptr_val(),",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
+		unsigned val=strtoul(token,&endptr2,10);
+		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
+
 		token=strtok(NULL,",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
+		val=256*val+strtoul(token,&endptr2,10);
+		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
+
 		token=strtok(NULL,")");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
+		val=256*val+strtoul(token,&endptr2,10);
+		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
-		return 1;
+		return val;
    }
    else
 		return 0;
