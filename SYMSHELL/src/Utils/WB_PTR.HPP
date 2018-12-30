@@ -89,7 +89,7 @@ public:
 			else  ptr=NULL;
 		}
 
-	wb_dynarray(size_t s,T first,...):size(s)
+	wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
 		{
 		assert(s>=1); 
 		ptr=new T[s];
@@ -151,6 +151,16 @@ T& operator [] (size_t index)
 size_t get_size()
 	{ return size;}
 
+void set_dynamic_ptr_val(T* iptr,size_t isiz)
+	{
+	dispose();
+	ptr=iptr;
+	if(ptr!=NULL)
+		size=isiz;
+		else
+		size=0;
+	}
+
 T* get_ptr_val(size_t offset=0)
 	{
 	assert(ptr!=NULL);
@@ -173,3 +183,16 @@ T*  give()
 
 
 
+/********************************************************************/
+/*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
+/*            W O J C I E C H   B O R K O W S K I                   */
+/* Zaklad Systematyki i Geografii Roslin Uniwersytetu Warszawskiego */
+/*  & Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
+/*        WWW:  http://moderato.iss.uw.edu.pl/~borkowsk             */
+/*        MAIL: borkowsk@iss.uw.edu.pl                              */
+/*                               (Don't change or remove this note) */
+/********************************************************************/
+
+
+
+
