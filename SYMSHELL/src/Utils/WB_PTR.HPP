@@ -8,6 +8,7 @@
 #define __WB_PTR_HPP__
 
 #include <stdio.h> //bo NULL i printf
+#include <stdarg.h>//Konstruktor z nieznana liczba parametrow
 #include <assert.h>
 
 template<class T>
@@ -86,6 +87,19 @@ public:
 		{ 
 		if(s>0) ptr=new T[s];
 			else  ptr=NULL;
+		}
+
+	wb_dynarray(size_t s,T first,...):size(s)
+		{
+		assert(s>=1); 
+		ptr=new T[s];
+		assert(ptr!=NULL/*After allocation*/);
+	
+		va_list list;
+		va_start(list,s);
+		for(size_t i=0;i<s;i++)		
+			ptr[i]=va_arg(list,T);
+		va_end(list);
 		}
 	
 	wb_dynarray(wb_dynarray& nini):size(nini.size),ptr(nini.ptr)
