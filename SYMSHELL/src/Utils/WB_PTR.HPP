@@ -226,7 +226,7 @@ void copy_from(const wb_dynarray<T>& Where); //Kopiowanie zawartoœci
 //Implementacje wb_dynarray
 ////////////////////////////////////////////////////////////////////////////////
 
-template<class T>
+template<class T> inline
 wb_dynarray<T>::wb_dynarray(size_t s/*=0*/):size(s)  //konstruktor alokujacy
 {																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )															   //assert(size!=0);
 	if(size>0)	ptr=new T[s];
@@ -242,7 +242,7 @@ wb_dynarray<T>::wb_dynarray(size_t s/*=0*/):size(s)  //konstruktor alokujacy
 	//	}
 
 
-template<class T>  //Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
+template<class T> inline //Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
 wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
 													size(nini.size),ptr(nini.ptr)
 {																				WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
@@ -252,35 +252,24 @@ wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
 }
 
 
-	//konstruktor wieloparametrowy inicjujacy itemy
-	wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
-		{
-		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<",T ...)" )
-																assert(size>=1);
-		ptr=new T[s];                                       	assert(ptr!=NULL/*After allocation*/);
 
-		va_list list;
-		va_start(list,s);
-		for(size_t i=0;i<s;i++)
-			ptr[i]=va_arg(list,T);
-		va_end(list);
-		}
-	/* //TAKI NIESTETY WCHODZI W KONFLIKAT Z TYM wb_dynarray(size,...),
-	   //wiêc nie mo¿na go wprowadziæ :-( bo ten poprzedni jest czêsto u¿ywany w wielu miejscach
-	explicit  wb_dynarray(size_t s,const T& FillVal):size(s)
-		{
-		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<','<<FillVal<<')' )
-															   assert(size!=0);
-		ptr=new T[s];
-		fill(FillVal);
-		}
-	*/
-	//destruktor zwalnia pamiec!
-	~wb_dynarray()
-		{
-		WBPTRLOG( "wb_dynarray::DESTRUCTOR" )
-		dispose();
-		}
+template<class T> inline  //konstruktor wieloparametrowy inicjujacy itemy
+wb_dynarray<T>::wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
+{																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<",T ...)" )
+																				assert(size>=1);
+	ptr=new T[s];                                       						assert(ptr!=NULL/*After allocation*/);
+	va_list list;
+	va_start(list,s);
+	for(size_t i=0;i<s;i++)
+		ptr[i]=va_arg(list,T);
+	va_end(list);
+}
+
+template<class T> inline  //destruktor zwalnia pamiec!
+wb_dynarray<T>::~wb_dynarray()
+{																				WBPTRLOG( "wb_dynarray::DESTRUCTOR" )
+	dispose();
+}
 
 int OK() const
 	{
