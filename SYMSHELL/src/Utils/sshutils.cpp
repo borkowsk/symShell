@@ -261,7 +261,7 @@ void arrow(int x1,int y1,int x2,int y2,wb_color color,double size,double theta)
 		circle_d(x1+def_arrow_size/sqrt(2.0),y1-def_arrow_size/sqrt(2.0)+1,def_arrow_size);
 		return;
 	}
-
+                                           assert(!(poY==0 && poX==0));
 	double alfa=atan2(poY,poX);            if(fabs(alfa)>M_PI+0.0000001)
                                              printf("Alfa=%e\n",alfa);
 											 //assert(fabs(alfa)<=M_PI);//cerr<<alfa<<endl;
