@@ -9,9 +9,10 @@
 
 #ifdef __cplusplus
 extern "C" 
+#else
+extern 
 #endif
-
-extern HWND	WB_Hwnd;//W symshwin.c
+HWND	WB_Hwnd;//W symshwin.c
 
 int ssh_set_window_name(const char* WindowName)
 {
