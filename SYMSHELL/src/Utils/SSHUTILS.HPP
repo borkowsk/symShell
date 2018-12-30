@@ -13,7 +13,7 @@
 #include <math.h>
 #include "symshell.h"
 
-#ifndef M_PI		/* np MVC++ nie definiuje */
+#ifndef M_PI		/* np MVC++ nie definiuje bez specjalnych zabiegów */
 #define M_PI        (3.14159265358979323846)
 #define M_PI_2      (1.57079632679489661923)
 #define M_PI_4      (0.785398163397448309616)
@@ -27,10 +27,10 @@ extern unsigned lang_selector;//=0 //Dla zestawu funkcji lang(...)
 
 inline
 const char* lang(const char* def,const char* alt) 
-		{ if(lang_selector!=0) return alt;else return def;}
+        { if(lang_selector!=0) return alt;else return def;}
 inline
 const char* lang(const char* def,const char* alt1,const char* alt2) 
-		{ if(lang_selector==2) return alt2;if(lang_selector==1)return alt1; else return def;}
+        { if(lang_selector==2) return alt2;if(lang_selector==1)return alt1; else return def;}
 
 const wb_color default_transparent=wb_color(-1);
 const wb_color default_color=default_transparent;
@@ -53,9 +53,9 @@ extern double def_arrow_theta;//=M_PI/6.0+M_PI; //Domyslne rozwarcie grota strza
 struct settings_bar3d
 {
 settings_bar3d(int ia=10,int ib=10,int ic=6,
-			   wb_color wcol=default_white,
-			   wb_color bcol=default_black):
-		a(ia),b(ib),c(ic),wire(wcol),back(bcol){}
+               wb_color wcol=default_white,
+               wb_color bcol=default_black):
+        a(ia),b(ib),c(ic),wire(wcol),back(bcol){}
 int a;
 int b;
 int c;
@@ -76,11 +76,12 @@ void head(int x,int y,int r,wb_color color,double direction);
 
 //Rysuje dowolna strzalke od punktu x1y1 do x2y2
 void arrow(int x1,int y1,int x2,int y2,wb_color color,double size=def_arrow_size,double theta=def_arrow_theta);
+void arrow_d(int x1,int y1,int x2,int y2,double size,double theta);//... ale kolorze ustalonym wczeœniej
 
-//Efektywnie rysuje pozioma strzalke
+//Szybko rysuje pozioma strzalke
 void vert_arrow(int x1,int x2,int y,wb_color color,double size=def_arrow_size);
 
-//Efektywnie rysuje pionowa strzalke
+//Szybko rysuje pionowa strzalke
 void hor_arrow(int x,int y1,int y2,wb_color  color,double size=def_arrow_size);
 
 //Rysuje kwadratowa ramke
@@ -100,7 +101,7 @@ void cross(int x,int y,wb_color color,int width=def_cross_width);
 int print_width(int x,int y,int maxwidth,wb_color col,wb_color bcg,const char* format,...);
 
 //Wyswietlanie pliku HTML poprzez system shell - tak naprawde to wszystkiego co moze wyswietlic przegladarka
-extern "C" { int ViewHtml(const char* URL); }//From "symshell" but less or more independent
+extern "C" { int ViewHtml(const char* URL); }
 
 #endif
 

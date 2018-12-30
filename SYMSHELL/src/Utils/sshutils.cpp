@@ -31,11 +31,11 @@ using namespace std;
 #include "INCLUDE/wbminmax.hpp"
 #include "INCLUDE/wb_ptr.hpp"
 
-#include "../../symshell.h"
-#include "../../sshutils.hpp"
+#include "symshell.h"
+#include "sshutils.hpp"
 
 double distance(double X1,double X2,double Y1,double Y2)
-//Czêsto potrzebne w takich programach
+//Czï¿½sto potrzebne w takich programach
 {
 	double dX=X2-X1;
 	double dY=Y2-Y1;
@@ -73,6 +73,7 @@ if(strchr(format,'%')!=NULL)//Sa znaki formatujace
 		{
 		errno=ENOMEM;
 		perror("print_width internal bufor exced");
+		exit(-1);
 		}
 	}
 	else
@@ -262,7 +263,7 @@ void arrow(int x1,int y1,int x2,int y2,wb_color color,double size,double theta)
 
 	if(poY==0 && poX==0)
 	{
-		//Rzadki b³¹d, ale DOMAIN ERROR!
+		//Rzadki bï¿½ï¿½d, ale DOMAIN ERROR!
 		cross(x1,y1,color,def_arrow_size/2);
 		circle_d(x1+def_arrow_size/sqrt(2.0),y1-def_arrow_size/sqrt(2.0)+1,def_arrow_size);
 		return;
@@ -282,6 +283,36 @@ void arrow(int x1,int y1,int x2,int y2,wb_color color,double size,double theta)
 	line_d(x1,y1,x2,y2);
 }
 
+void arrow_d(int x1,int y1,int x2,int y2,double size,double theta)
+{
+	//METODA LICZENIA Z OBRACANIA OSI STRZALKI
+	double A=(size>=1 ? size : size * sqrt( sqr(x1-x2)+sqr(y1-y2) ));
+	double poY=double(y2-y1);
+	double poX=double(x2-x1);
+
+	if(poY==0 && poX==0)
+	{
+		//Rzadki bï¿½ï¿½d, ale DOMAIN ERROR!
+		int cross_width=def_arrow_size/2;
+		line_d(x1-cross_width,y1,x1+cross_width,y1);
+		line_d(x1,y1-cross_width,x1,y1+cross_width);
+		circle_d(x1+def_arrow_size/sqrt(2.0),y1-def_arrow_size/sqrt(2.0)+1,def_arrow_size);
+		return;
+	}
+                                           assert(!(poY==0 && poX==0));
+	double alfa=atan2(poY,poX);            if(fabs(alfa)>M_PI+0.0000001)
+                                             printf("Alfa=%e\n",alfa);
+											 //assert(fabs(alfa)<=M_PI);//cerr<<alfa<<endl;
+	double xo1=A*cos(theta+alfa);
+	double yo1=A*sin(theta+alfa);
+	double xo2=A*cos(alfa-theta);
+	double yo2=A*sin(alfa-theta);
+	//cross(x2,y2,128);DEBUG
+
+	line_d(int(x2+xo1),int(y2+yo1),x2,y2);
+	line_d(int(x2+xo2),int(y2+yo2),x2,y2);
+	line_d(x1,y1,x2,y2);
+}
 
 void head(int x,int y,int r,wb_color color,double direction)
 {
@@ -294,7 +325,7 @@ void head(int x,int y,int r,wb_color color,double direction)
 	xn=x+0.95*r*cos(direction-M_PI/2);
 	yn=y+0.95*r*sin(direction-M_PI/2);
 	fill_circle(xn,yn,r/4,color);  //Ucho  2
-	//G³ówny blok
+	//Gï¿½ï¿½wny blok
 	fill_circle(x,y,r,color);
 }
 
