@@ -18,8 +18,11 @@
 extern "C" {
 #endif
 
-float  randg(); 			 /* Num.Rec. random number generator */
-void   srandg(short int);    /* Seed setting for generator */
+float	randg(); 			 /* Num.Rec. random number generator */
+void	srandg(short int);    /* Seed setting for generator */
+float	randnorm();			/* Normalised output of randg */
+float	randexp();			/* Expotential output of randg */
+char*	strrnd(char* buf,size_t len,char StartCh,char LastCh); /* Random string of len chars +  '\0'*/
 
 #ifdef __cplusplus
 };
