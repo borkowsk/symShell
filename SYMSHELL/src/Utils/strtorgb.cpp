@@ -1,14 +1,17 @@
 #include <cctype>
 #include <cstdlib>
-//using namespace std;
+
 #include "INCLUDE/wb_ptr.hpp"
+
+using namespace std;
 
 //Funkcja interpretuj¹ca string jako wartoœæ RGB
 //Dopuszczalne formaty to: xFFFFFF  b111111111111111111111111  rgb(255,255,255) RGB(255,255,255) oraz dziesiêtny oczywiœcie
 
-inline unsigned strtounsigned(const char *s, char **endptr)
+unsigned strtorgb(const char *s, char **endptr)
 {
    while(isspace(*s)) s++;   //isblank() Usun biale       ?
+
    if(s[0]=='0' && tolower(s[1])=='x' )
 		return  strtoul(s,endptr,16);
    else
@@ -21,16 +24,6 @@ inline unsigned strtounsigned(const char *s, char **endptr)
    if(tolower(s[0])=='b')
 		return  strtoul(s+1,endptr,2);
    else
-   {
-		return strtoul(s,endptr,10);
-   }
-}
-
-unsigned strtorgb(const char *s, char **endptr)
-{
-   while(isspace(*s)) s++;   //isblank() Usun biale       ?
-
-
    if(tolower(s[0])=='r' &&  tolower(s[1])=='g' && tolower(s[2])=='b' && tolower(s[3])=='(')
    {
 		wbrtm::wb_pchar pom(s+4);
@@ -38,17 +31,17 @@ unsigned strtorgb(const char *s, char **endptr)
 
 		char* token=strtok(pom.get_ptr_val(),",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		unsigned val=strtounsigned(token,&endptr2);
+		unsigned val=strtoul(token,&endptr2,10);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtounsigned(token,&endptr2);
+		val=256*val+strtoul(token,&endptr2,10);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,")");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtounsigned(token,&endptr2);
+		val=256*val+strtoul(token,&endptr2,10);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		return val;
@@ -61,28 +54,28 @@ unsigned strtorgb(const char *s, char **endptr)
 
 		char* token=strtok(pom.get_ptr_val(),",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		unsigned val=strtounsigned(token,&endptr2);
+		unsigned val=strtoul(token,&endptr2,10);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtounsigned(token,&endptr2);
+		val=256*val+strtoul(token,&endptr2,10);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,",");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtounsigned(token,&endptr2);
+		val=256*val+strtoul(token,&endptr2,10);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		token=strtok(NULL,")");
 		if(token==NULL) { *endptr=(char*)s;return 0; }
-		val=256*val+strtounsigned(token,&endptr2);
+		val=256*val+strtoul(token,&endptr2,10);
 		if(endptr2!=NULL && *endptr2!='\0') { *endptr=(char*)s;return 0; }
 
 		return val;
    }
    else
    {
-	   return strtounsigned(s,endptr);
+		return strtoul(s,endptr,10);
    }
 }
