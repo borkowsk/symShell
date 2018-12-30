@@ -6,7 +6,7 @@
 //Dopuszczalne formaty to: xFFFFFF  b111111111111111111111111  rgb(255,255,255) RGB(255,255,255) oraz dziesiêtny oczywiœcie
 
 unsigned strtorgb(const char *s, char **endptr)
-{  //char* endptr=NULL;
+{
    while(isblank(*s)) s++;   //Usun biale    // strtol   ?
 
    if(s[0]=='0' && tolower(s[1])=='x' )
