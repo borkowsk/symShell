@@ -3,16 +3,36 @@
 * Napisane NIEOBIEKTOWO ale w C++
 * Jest tu: print_width() , rect(), bar3D(), cross(), *_arrow() ...itp...
 *****************************************************************************************/
-#include <assert.h>
-#include <stdio.h>
+
 #include <errno.h>
 #include <ctype.h>
+
+#include "INCLUDE/platform.hpp"
+
+#ifdef NEW_FASHION_CPP
+#include <cstdlib>
+#include <cstdio> //sprintf!!!
+#include <cmath>
+#include <cstring>
+#include <cstdarg>
+//#include <iostream>
+using namespace std;
+#else
+/*
+#include <stdlib.h>
+#include <stdio.h> //sprintf!!!
+#include <math.h>
 #include <string.h>
 #include <stdarg.h>
-#include <math.h>
+//#include <iostream.h>
+*/
+#endif
+
 #include "INCLUDE/wbminmax.hpp"
+#include "INCLUDE/wb_ptr.hpp"
 #include "../../symshell.h"
 #include "../../sshutils.hpp"
+
 //#include "graphs.hpp"
 
 //Drukuje w obszarze nie wiekszym niz max_width. Zwraca width albo 0
@@ -40,9 +60,13 @@ if(strchr(format,'%')!=NULL)//Sa znaki formatujace
 	}
 	else
 	{
-	strcpy(bufor,format);	
+	strcpy(bufor,format);
 	}
 
+//Teraz powinien wylapac tabulacje
+//......
+
+//Jak jest dluzsze niz miejsce to odcina z gwiazdka
 while( (width=string_width(bufor)) >maxwidth )
 		{
 		int size=strlen(bufor);
@@ -77,7 +101,7 @@ void rect(int x1,int y1,int x2,int y2,wb_color frame_c,int width)
     }
     else
     {
-        assert("NOT TESTED CODE in rect()"==NULL);
+								assert("NOT TESTED CODE in rect()"==NULL);
     fill_rect(x1,y1,x2,y1+width,frame_c);//--->
     fill_rect(x2,y1,x2+width,y2,frame_c);//vvv
     fill_rect(x1,y2,x2,y2+width,frame_c);//<---
@@ -181,13 +205,14 @@ void bar3dRGB(int x,int y,int h,int R,int G,int B,int Shad)
 	fill_rect(x,y-h,x+1,y+1,wire_col);       //lewy pion
 }/* end slupek RGB */
 
-int def_frame_width=1;//Domyslna grubosc ramki 
+int def_frame_width=1;//Domyslna grubosc ramki
 int def_cross_width=5;//Domyslna szerokosc krzyzyka
 
-void cross(int x,int y,wb_color kolor,int cross_width)
+void cross(int x,int y,wb_color color,int cross_width)
 {
-	line(x-cross_width,y,x+cross_width,y,kolor);
-	line(x,y-cross_width,x,y+cross_width,kolor);
+	set_pen(color,1,SSH_LINE_SOLID); // Ustala aktualny kolor linii za pomoca skladowych RGB
+	line_d(x-cross_width,y,x+cross_width,y);
+	line_d(x,y-cross_width,x,y+cross_width);
 }
 
 void ver_scale(int x1,int y1,int width,wb_color start,wb_color end)
@@ -201,38 +226,94 @@ void ver_scale(int x1,int y1,int width,wb_color start,wb_color end)
 double def_arrow_size=15;
 double def_arrow_theta=M_PI/6.0+M_PI;//3.6651914291881
 
+static inline double sqr(const double& p){ return p*p;}
+
 void arrow(int x1,int y1,int x2,int y2,wb_color color,double size,double theta)
-{	
+{
 	//METODA LICZENIA Z OBRACANIA OSI STRZALKI
-	double A=(size>=1?size:size*sqrt(sqr(x1-x2)+sqr(y1-y2)));
+	double A=(size>=1?size:size*std::sqrt(sqr(x1-x2)+sqr(y1-y2)));
 	double poY=double(y2-y1);
 	double poX=double(x2-x1);
+	set_pen(color,1,SSH_LINE_SOLID); // Ustala aktualny kolor linii za pomoca skladowych RGB
+
 	if(poY==0 && poX==0)
 	{
 		//Rzadki b³¹d, ale DOMAIN ERROR!
 		cross(x1,y1,color,def_arrow_size/2);
-		circle(x1+def_arrow_size/sqrt(2),y1-def_arrow_size/sqrt(2)+1,def_arrow_size,color);
-		return;	
+		circle_d(x1+def_arrow_size/sqrt(2.0),y1-def_arrow_size/sqrt(2.0)+1,def_arrow_size);
+		return;
 	}
-	
-	double alfa=atan2(poY,poX);             assert(fabs(alfa)<=M_PI);
+
+	double alfa=atan2(poY,poX);            if(fabs(alfa)>M_PI+0.0000001)
+                                             printf("Alfa=%e\n",alfa);
+											 //assert(fabs(alfa)<=M_PI);//cerr<<alfa<<endl;
 	double xo1=A*cos(theta+alfa);
 	double yo1=A*sin(theta+alfa);
 	double xo2=A*cos(alfa-theta);
 	double yo2=A*sin(alfa-theta);
 	//cross(x2,y2,color);DEBUG
 
-	line(int(x2+xo1),int(y2+yo1),x2,y2,color);
-	line(int(x2+xo2),int(y2+yo2),x2,y2,color);
-	line(x1,y1,x2,y2,color);
+	line_d(int(x2+xo1),int(y2+yo1),x2,y2);
+	line_d(int(x2+xo2),int(y2+yo2),x2,y2);
+	line_d(x1,y1,x2,y2);
 }
+
+
+void head(int x,int y,int r,wb_color color,double direction)
+{
+	double xn=x+r*cos(direction);
+	double yn=y+r*sin(direction);
+	fill_circle(xn,yn,r/5,color);  //Nos
+	xn=x+0.95*r*cos(direction+M_PI/2);
+	yn=y+0.95*r*sin(direction+M_PI/2);
+	fill_circle(xn,yn,r/4,color);  //Ucho  1
+	xn=x+0.95*r*cos(direction-M_PI/2);
+	yn=y+0.95*r*sin(direction-M_PI/2);
+	fill_circle(xn,yn,r/4,color);  //Ucho  2
+	//G³ówny blok
+	fill_circle(x,y,r,color);
+}
+
+//Funkcja interpretuj¹ca string jako wartoœæ RGB
+//Dopuszczalne formaty to: xFFFFFF  b111111111111111111111111  rgb(255,255,255) RGB(255,255,255)
+unsigned strtorgb(const char *s, char **endptr)
+{  //char* endptr=NULL;
+   while(isblank(*s)) s++;   //Usun biale
+
+   if(s[0]=='0' && tolower(s[1])=='x' )
+		return  strtoul(s,endptr,16);    // strtol
+   else
+   if(tolower(s[0])=='x')
+		return  strtoul(s+1,endptr,16);
+   else
+   if(tolower(s[0])=='o')
+		return  strtoul(s+1,endptr,8);
+   else
+   if(tolower(s[0])=='b')
+		return  strtoul(s+1,endptr,2);
+   else
+   if(tolower(s[0])=='r' &&  tolower(s[1])=='g' && tolower(s[2])=='b' && tolower(s[3])=='(')
+   {
+		wbrtm::wb_pchar pom(s+4);
+		char* token=strtok(pom.get_ptr_val(),",");
+		if(token==NULL) { *endptr=(char*)s;return 0; }
+		token=strtok(NULL,",");
+		if(token==NULL) { *endptr=(char*)s;return 0; }
+		token=strtok(NULL,")");
+		if(token==NULL) { *endptr=(char*)s;return 0; }
+
+		return 1;
+   }
+   else
+		return 0;
+}
+
 /********************************************************************/
 /*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
 /*            W O J C I E C H   B O R K O W S K I                   */
-/* Zaklad Systematyki i Geografii Roslin Uniwersytetu Warszawskiego */
-/*  & Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
-/*        WWW:  http://moderato.iss.uw.edu.pl/~borkowsk             */
-/*        MAIL: borkowsk@iss.uw.edu.pl                              */
+/*    Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
+/*        WWW:  http://borkowski.iss.uw.edu.pl/                     */
+/*        MAIL: wborkowski@uw.edu.pl                                */
 /*                               (Don't change or remove this note) */
 /********************************************************************/
 

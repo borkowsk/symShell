@@ -39,7 +39,7 @@ const wb_color default_half_gray=256+128;
 const wb_color default_light_gray=256+128+64;
 
 //Funkcja interpretuj¹ca string jako wartoœæ RGB
-//Dopuszczalne formaty to xFFFFFF  b111111111111111111111111  rgb(111,111,111)
+//Dopuszczalne formaty to: xFFFFFF  b111111111111111111111111  rgb(255,255,255) RGB(255,255,255)
 unsigned strtorgb(const char *s, char **endptr);
 
 extern int def_frame_width;//=1;//Domyslna grubosc ramki 
