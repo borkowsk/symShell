@@ -226,8 +226,8 @@ void copy_from(const wb_dynarray<T>& Where); //Kopiowanie zawartoœci
 //Implementacje wb_dynarray
 ////////////////////////////////////////////////////////////////////////////////
 
-template<class T> //konstruktor alokujacy
-explicit wb_dynarray<T>::wb_dynarray(size_t s=0):size(s)
+template<class T>
+wb_dynarray<T>::wb_dynarray(size_t s/*=0*/):size(s)  //konstruktor alokujacy
 {																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )															   //assert(size!=0);
 	if(size>0)	ptr=new T[s];
 			else ptr=NULL;
@@ -241,18 +241,19 @@ explicit wb_dynarray<T>::wb_dynarray(size_t s=0):size(s)
 	//	nini.size=0;
 	//	}
 
-	//Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
-	wb_dynarray(const wb_dynarray& nini/*,bool copy=false*/):size(nini.size),ptr(nini.ptr)
-		{
-		WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
+
+template<class T>  //Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
+wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
+													size(nini.size),ptr(nini.ptr)
+{																				WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
 																//assert(size!=0); Mo¿e siê zdarzyæ, ¿e kopiujemy pust¹!
-		const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
-		const_cast<wb_dynarray<T>&>(nini).size=0;
-		}
+	const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
+	const_cast<wb_dynarray<T>&>(nini).size=0;
+}
 
 
 	//konstruktor wieloparametrowy inicjujacy itemy
-	explicit wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
+	wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
 		{
 		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<",T ...)" )
 																assert(size>=1);
