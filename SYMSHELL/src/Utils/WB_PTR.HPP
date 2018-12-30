@@ -223,276 +223,6 @@ void copy_from(const T Where[],size_t how_many_elements);//Kopiowanie zawartoœci
 void copy_from(const wb_dynarray<T>& Where); //Kopiowanie zawartoœci
 };
 
-//Implementacje wb_dynarray
-////////////////////////////////////////////////////////////////////////////////
-
-template<class T> inline
-wb_dynarray<T>::wb_dynarray(size_t s/*=0*/):size(s)  //konstruktor alokujacy
-{																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )															   //assert(size!=0);
-	if(size>0)	ptr=new T[s];
-			else ptr=NULL;
-}
-
-	//konstruktor transferujacy. Niestety uniemozliwia niektore konstrukcje, a jakos "zaslania" ten z "const wb_dynarray&"
-	//wb_dynarray(wb_dynarray& nini):size(nini.size),ptr(nini.ptr)
-	//	{
-	//	WBPTRLOG( "wb_dynarray::TRANSFER CONSTRUCTOR("<<((void*)&nini)<<")" )
-	//	nini.ptr=NULL;
-	//	nini.size=0;
-	//	}
-
-/*
-template<class T> inline //Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
-wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
-													size(nini.size),ptr(nini.ptr)
-{																				WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
-																//assert(size!=0); Mo¿e siê zdarzyæ, ¿e kopiujemy pust¹!
-	const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
-	const_cast<wb_dynarray<T>&>(nini).size=0;
-}
-*/
-
-
-template<class T> inline  //konstruktor wieloparametrowy inicjujacy itemy
-wb_dynarray<T>::wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
-{																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<",T ...)" )
-																				assert(size>=1);
-	ptr=new T[s];                                       						assert(ptr!=NULL/*After allocation*/);
-	va_list list;
-	va_start(list,s);
-	for(size_t i=0;i<s;i++)
-		ptr[i]=va_arg(list,T);
-	va_end(list);
-}
-
-template<class T> inline  //destruktor zwalnia pamiec!
-wb_dynarray<T>::~wb_dynarray()
-{																				WBPTRLOG( "wb_dynarray::DESTRUCTOR" )
-	dispose();
-}
-
-/*
-template<class T> inline
-int wb_dynarray<T>::OK() const
-{	return ptr!=NULL;	}
-*/
-
-/*
-template<class T> inline  //Czy tablica zostala zalokowana
-int wb_dynarray<T>::IsOK() const
-	{	return ptr!=NULL; }
-*/
-
-//Alokacja wektora
-template<class T> inline
-size_t wb_dynarray<T>::alloc(size_t s)
-	{
-	WBPTRLOG( "wb_dynnarray::alloc("<<s<<")" )
-	assert(s>0);
-	if(get_size()>0)
-		dispose();
-
-	ptr=new T[s];
-	if(ptr==NULL)
-			return 0;
-	size=s;
-	return s;
-	}
-
-//Skrócenie wektora - przydatne przy czytaniu
-//ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
-template<class T> inline
-size_t wb_dynarray<T>::trunc(size_t s)
-	{																			WBPTRLOG( "wb_dynnarray::trunc("<<s<<")" )
-	if(ptr==NULL) //Bo wtedy bzdura
-			return 0;
-	assert(s>0); //Jak ma byc 0 to "dispose"!
-	assert(s<size); //Tylko realne skracanie jest bezpieczne
-	T* tmp=new T[s];
-//	memcpy(tmp,ptr,s*sizeof(T));
-	for(unsigned i=0;i<s;i++)
-		tmp[i]=ptr[i]; //Dla klas uzyty operator przypisania
-	dispose();  //Kasacja starego wektora - a destruktory?
-//	delete (void*)ptr; //?Zwalnianie bez wywo³ywania mo¿liwych destruktorów
-	ptr=tmp;    //Zapamietanie nowego
-	size=s;
-	return size;
-	}
-
-//Rozszerzenie wektora - przydatne do rozbudowy tablicy
-//ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
-template<class T> inline
-size_t wb_dynarray<T>::expand(size_t s,const T& FillVal)
-	{
-	WBPTRLOG( "wb_dynnarray::expand("<<s<<")" )
-	if(ptr==NULL) //Bo wtedy bzdura
-			return 0;
-	assert(s>size); //Powiêkszamy!
-	T* tmp=new T[s];
-
-//	memcpy(tmp,ptr,s*sizeof(T));
-	//Bezpieczne choæ nieefektywny przepisanie zawartoœci komórek
-	for(unsigned i=0;i<size;i++)
-		tmp[i]=ptr[i]; //Dla klas uzyty operator przypisania
-	//Jakieœ wype³nienie nowych komórek
-	for(unsigned i=size;i<s;i++)
-		tmp[i]=FillVal;//Dla klas uzyty operator przypisania
-
-//	delete (void*)ptr; //?Zwalnianie bez wywo³ywania mo¿liwych destruktorów
-	dispose();  //Kasacja starego wektora - a destruktory?
-
-	//Zapamietanie nowego
-	ptr=tmp;
-	size=s;
-	return size;
-	}
-
-//Dealokacja wektora
-template<class T> inline
-void wb_dynarray<T>::dispose()
-	{
-	WBPTRLOG( "wb_dynarray::dispose() :"<<size )
-#ifdef USES_NONSTD_ALLOCATORS
-	if(ptr) delete [size]ptr;
-#else
-	if(ptr) delete []ptr;
-#endif
-	ptr=NULL;
-	size=0;
-	}
-
-//dostep do pojedynczego itemu
-template<class T> inline
-T& wb_dynarray<T>::operator [] (size_t index) const
-	{
-#ifndef _NDEBUG
-	if(ptr==NULL || index>=size)
-	{ //Tu postaw breakpoint!
-	 //	cerr<<"Invalid use of wb_dynarray "<<hex<<unsigned(this)<<" tabptr:"
-	  //		<<hex<<unsigned(ptr)<<"index:"<<index<<" size:"<<size<<endl;
-		assert(ptr!=NULL);
-		assert(index<size);
-	}
-#endif
-	return ptr[index];
-	}
-
-//Rozmiar wewnetrznego wektora
-/*
-template<class T> inline
-size_t wb_dynarray<T>::get_size() const { return size;}
-*/
-
-//Daje bezposredni dostep do wewnetrznego wektora
-//ale nie wolno go zdealokowac!!!
-template<class T> inline
-T* wb_dynarray<T>::get_ptr_val(size_t offset/*=0*/,size_t interest/*=0*/) const
-	{
-	if(ptr==NULL ||
-	   offset>=size ||
-	   offset+interest>=size+1
-	   )
-	   return NULL;
-	return ptr+offset;
-	}
-
-//Zabiera adres zpod zarzadu tablicy!!!
-template<class T> inline
-T*  wb_dynarray<T>::give_dynamic_ptr_val(size_t& outsize)
-	{
-	T* pom=ptr;
-	outsize=size;
-	//kasowanie
-	ptr=NULL;size=0;
-	return pom;
-	}
-
-//Wymusza umieszczenie dynamicznie alokowanego
-//wektora jako tablicy wewnatrz dynarray
-template<class T> inline
-wb_dynarray<T>& wb_dynarray<T>::set_dynamic_ptr_val(T* iptr,size_t isiz)
-	{
-	dispose();
-	ptr=iptr;
-	if(ptr!=NULL)
-		size=isiz;
-		else
-		size=0;
-	return *this;
-	}
-
-//Wymusza umieszczenie dynamicznie alokowanego
-//wektora jako tablicy wewnatrz dynarray
-//tylko nie zwraca this
-template<class T> inline
-void wb_dynarray<T>::take(T* iptr,size_t isiz)
-	{
-	dispose();
-	ptr=iptr;
-	if(ptr!=NULL)
-		size=isiz;
-		else
-		size=0;
-	}
-
-template<class T> inline
-void wb_dynarray<T>::take(wb_dynarray& nini)
-	{
-	if(size>0)
-		dispose();
-	ptr=nini.ptr;
-	size=nini.size;
-	nini.ptr=NULL;
-	nini.size=0;
-	}
-
-//Transferujacy operator przypisania
-template<class T> inline
-wb_dynarray<T>& wb_dynarray<T>::operator = (wb_dynarray<T>& nini)
-	{
-	WBPTRLOG( "wb_dynnarray::operator = (wb_dynarray& "<<((void*)&nini)<<")" )
-	this->take(nini);
-	return *this;
-	}
-
-//Rozne wygodne funkcje pomocnicze
-template<class T> inline
-void wb_dynarray<T>::fill(const T& Val)
-{
-	size_t i,H=get_size();
-	for(i=0;i<H;i++)//Po elementach
-	{
-		(*this)[i]=Val;//Wypelnij ten element
-	}
-}
-
-//Przemieszczenie pojedynczego elementu z pozycji 0 na koniec
-template<class T> inline
-void wb_dynarray<T>::shift_left(size_t index)
-{
-	char bufor[sizeof(T)];
-    assert(ptr!=NULL);
-    assert(index<size);
-    if(index>=size-1) return;//Nic nie trzeba robic
-	memcpy(bufor,ptr+index,sizeof(T));
-    size_t ile=size-index-1;
-	memcpy(ptr+index,ptr+(index+1),sizeof(T)*ile);
-	memcpy(ptr+(size-1),bufor,sizeof(T));
-}
-
-template<class T> inline
-void wb_dynarray<T>::copy_from(const T Where[],size_t how_many_elements)
-{
-    assert(how_many_elements<=size);
-    memcpy(ptr,Where,how_many_elements*sizeof(T));
-}
-
-template<class T> inline
-void copy_from(const wb_dynarray<T>& Where)
-{
-	wb_dynarray<T>::assert(Where.get_size()<=size);
-    memcpy(ptr,Where.get_ptr_val(),Where.get_size()*sizeof(T));
-}
 
 //Szablon prostej tablicy dwuwymiarowej
 //o dowolnej ilosci wierszy i dowolnej dlugosci kazdego wiersza.
@@ -806,6 +536,268 @@ const char* wb_pchar::get() const
 	return get_ptr_val();
 	}
 
+//Implementacje wb_dynarray
+////////////////////////////////////////////////////////////////////////////////
+
+template<class T> inline
+wb_dynarray<T>::wb_dynarray(size_t s/*=0*/):size(s)  //konstruktor alokujacy
+{																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )															   //assert(size!=0);
+	if(size>0)	ptr=new T[s];
+			else ptr=NULL;
+}
+
+	//konstruktor transferujacy. Niestety uniemozliwia niektore konstrukcje, a jakos "zaslania" ten z "const wb_dynarray&"
+	//wb_dynarray(wb_dynarray& nini):size(nini.size),ptr(nini.ptr)
+	//	{
+	//	WBPTRLOG( "wb_dynarray::TRANSFER CONSTRUCTOR("<<((void*)&nini)<<")" )
+	//	nini.ptr=NULL;
+	//	nini.size=0;
+	//	}
+
+/*
+template<class T> inline //Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
+wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
+													size(nini.size),ptr(nini.ptr)
+{																				WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
+																//assert(size!=0); Mo¿e siê zdarzyæ, ¿e kopiujemy pust¹!
+	const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
+	const_cast<wb_dynarray<T>&>(nini).size=0;
+}
+*/
+
+
+template<class T> inline  //konstruktor wieloparametrowy inicjujacy itemy
+wb_dynarray<T>::wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
+{																				WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<",T ...)" )
+																				assert(size>=1);
+	ptr=new T[s];                                       						assert(ptr!=NULL/*After allocation*/);
+	va_list list;
+	va_start(list,s);
+	for(size_t i=0;i<s;i++)
+		ptr[i]=va_arg(list,T);
+	va_end(list);
+}
+
+template<class T> inline  //destruktor zwalnia pamiec!
+wb_dynarray<T>::~wb_dynarray()
+{																				WBPTRLOG( "wb_dynarray::DESTRUCTOR" )
+	dispose();
+}
+
+/*
+template<class T> inline
+int wb_dynarray<T>::OK() const
+{	return ptr!=NULL;	}
+*/
+
+/*
+template<class T> inline  //Czy tablica zostala zalokowana
+int wb_dynarray<T>::IsOK() const
+	{	return ptr!=NULL; }
+*/
+
+//Alokacja wektora
+template<class T> inline
+size_t wb_dynarray<T>::alloc(size_t s)
+{																				WBPTRLOG( "wb_dynnarray::alloc("<<s<<")" )
+																				assert(s>0);
+	if(get_size()>0)
+		dispose();
+
+	ptr=new T[s];
+	if(ptr==NULL)
+			return 0;
+	size=s;
+	return s;
+}
+
+//Skrócenie wektora - przydatne przy czytaniu
+//ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
+template<class T> inline
+size_t wb_dynarray<T>::trunc(size_t s)
+{																				WBPTRLOG( "wb_dynnarray::trunc("<<s<<")" )
+	if(ptr==NULL) //Bo wtedy bzdura
+			return 0;															assert(s>0); //Jak ma byc 0 to "dispose"!
+																				assert(s<size); //Tylko realne skracanie jest bezpieczne
+	T* tmp=new T[s];  //Ewentualne konstruktory zadzia³aj¹!
+
+//	memcpy(tmp,ptr,s*sizeof(T));
+//	delete (void*)ptr; //?Zwalnianie bez wywo³ywania mo¿liwych destruktorów
+
+	for(unsigned i=0;i<s;i++)
+		tmp[i]=ptr[i]; //Dla klas uzyty operator przypisania
+	dispose();  	   //Kasacja starego wektora - destruktory zadzia³aj¹!
+
+	ptr=tmp;    //Zapamietanie nowego
+	size=s;
+	return size;
+}
+
+//Rozszerzenie wektora - przydatne do rozbudowy tablicy
+//ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
+template<class T> inline
+size_t wb_dynarray<T>::expand(size_t s,const T& FillVal)
+{																				WBPTRLOG( "wb_dynnarray::expand("<<s<<")" )
+	if(ptr==NULL) //Bo wtedy bzdura
+			return 0;														   	assert(s>size); //Powiêkszamy!
+	T* tmp=new T[s];
+
+	//	memcpy(tmp,ptr,s*sizeof(T));
+	//	delete (void*)ptr; //?Zwalnianie bez wywo³ywania mo¿liwych destruktorów
+
+	//Bezpieczne choæ nieefektywny przepisanie zawartoœci komórek
+	for(unsigned i=0;i<size;i++)
+		tmp[i]=ptr[i]; //Dla klas uzyty operator przypisania
+
+	//Jakieœ wype³nienie nowych komórek
+	for(unsigned i=size;i<s;i++)
+		tmp[i]=FillVal;//Dla klas uzyty operator przypisania
+
+	dispose();  //Kasacja starego wektora - a destruktory?
+
+	//Zapamietanie nowego
+	ptr=tmp;
+	size=s;
+	return size;
+}
+
+//Dealokacja wektora
+template<class T> inline
+void wb_dynarray<T>::dispose()
+{																				WBPTRLOG( "wb_dynarray::dispose() :"<<size )
+	if(ptr)
+		delete []ptr;
+	ptr=NULL;
+	size=0;
+}
+
+//dostep do pojedynczego itemu
+template<class T> inline
+T& wb_dynarray<T>::operator [] (size_t index) const
+{
+#ifndef _NDEBUG
+	if(ptr==NULL || index>=size)
+	{ //Tu postaw breakpoint!
+	 //	cerr<<"Invalid use of wb_dynarray "<<hex<<unsigned(this)<<" tabptr:"<<hex<<unsigned(ptr)<<"index:"<<index<<" size:"<<size<<endl;
+																				assert(ptr!=NULL);assert(index<size);
+	}
+#endif
+	return ptr[index];
+}
+
+//Rozmiar wewnetrznego wektora
+/*
+template<class T> inline
+size_t wb_dynarray<T>::get_size() const { return size;}
+*/
+
+//Daje bezposredni dostep do wewnetrznego wektora
+//ale nie wolno go zdealokowac!!!
+template<class T> inline
+T* wb_dynarray<T>::get_ptr_val(size_t offset/*=0*/,size_t interest/*=0*/) const
+{
+	if( ptr==NULL
+	 || offset>=size
+	 || offset+interest>=size+1
+	   )
+	   return NULL;
+	return ptr+offset;
+}
+
+//Zabiera adres zpod zarzadu tablicy!!!
+template<class T> inline
+T*  wb_dynarray<T>::give_dynamic_ptr_val(size_t& outsize)
+{   //Na wyjœcie
+	T* pom=ptr;
+	outsize=size;
+	//kasowanie
+	ptr=NULL;size=0;
+	return pom;
+}
+
+//Wymusza umieszczenie dynamicznie alokowanego
+//wektora jako tablicy wewnatrz dynarray zezwrotem *this
+template<class T> inline
+wb_dynarray<T>& wb_dynarray<T>::set_dynamic_ptr_val(T* iptr,size_t isiz)
+{
+	dispose();
+	ptr=iptr;
+	if(ptr!=NULL)
+		size=isiz;
+		else
+		size=0;
+	return *this;
+}
+
+//Wymusza umieszczenie dynamicznie alokowanego
+//wektora jako tablicy wewnatrz dynarray
+template<class T> inline
+void wb_dynarray<T>::take(T* iptr,size_t isiz)
+{
+	dispose();
+	ptr=iptr;
+	if(ptr!=NULL)
+		size=isiz;
+		else
+		size=0;
+}
+
+template<class T> inline
+void wb_dynarray<T>::take(wb_dynarray& nini)
+{
+	if(size>0)
+		dispose();
+	ptr=nini.ptr;
+	size=nini.size;
+	nini.ptr=NULL;
+	nini.size=0;
+}
+
+//Transferujacy operator przypisania
+template<class T> inline
+wb_dynarray<T>& wb_dynarray<T>::operator = (wb_dynarray<T>& nini)
+{																				WBPTRLOG( "wb_dynnarray::operator = (wb_dynarray& "<<((void*)&nini)<<")" )
+	this->take(nini);
+	return *this;
+}
+
+//Rozne wygodne funkcje pomocnicze
+template<class T> inline
+void wb_dynarray<T>::fill(const T& Val)
+{
+	size_t i,H=get_size();
+	for(i=0;i<H;i++)//Po elementach
+	{
+		(*this)[i]=Val;//Wypelnij ten element
+	}
+}
+
+//Przemieszczenie pojedynczego elementu z pozycji 0 na koniec
+//U¿ywa memcpy ale niczego nie likwiduje wiêc to chyba nie problem
+template<class T> inline
+void wb_dynarray<T>::shift_left(size_t index)
+{
+	char bufor[sizeof(T)];														assert(ptr!=NULL);
+																				assert(index<size);
+	if(index>=size-1) return;//Nic nie trzeba robic
+	memcpy(bufor,ptr+index,sizeof(T));
+	size_t ile=size-index-1;
+	memcpy(ptr+index,ptr+(index+1),sizeof(T)*ile);
+	memcpy(ptr+(size-1),bufor,sizeof(T));
+}
+
+template<class T> inline
+void wb_dynarray<T>::copy_from(const T Where[],size_t how_many_elements)
+{																				assert(how_many_elements<=size);
+    memcpy(ptr,Where,how_many_elements*sizeof(T));
+}
+
+template<class T> inline
+void copy_from(const wb_dynarray<T>& Where)
+{																				assert(Where.get_size()<=size);
+    memcpy(ptr,Where.get_ptr_val(),Where.get_size()*sizeof(T));
+}
+
 
 //"ZAPRZYJANIONE" FUNKCJE POMOCNICZE
 /////////////////////////////////////
@@ -814,27 +806,27 @@ const char* wb_pchar::get() const
 
 inline //friend
 size_t strlen(const wb_pchar& what)
-	{
-		return ::strlen(what.get());
-	}
+{
+	return ::strlen(what.get());
+}
 
 inline //friend
 size_t strcmp(const wb_pchar& f,const wb_pchar& s)
-	{
-		return ::strcmp(f.get(),s.get());
-	}
+{
+	return ::strcmp(f.get(),s.get());
+}
 
 inline //friend
 size_t strcmp(const char* f,const wb_pchar& s)
-	{
-		return ::strcmp(f,s.get());
-	}
+{
+	return ::strcmp(f,s.get());
+}
 
 inline //friend
 size_t strcmp(const wb_pchar& f,const char* s)
-	{
-		return ::strcmp(f.get(),s);
-	}
+{
+	return ::strcmp(f.get(),s);
+}
 
 inline //friend
 const char* strchr(const wb_pchar& what,const char c)
