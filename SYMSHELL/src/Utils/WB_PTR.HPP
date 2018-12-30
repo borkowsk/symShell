@@ -107,7 +107,7 @@ wb_ptr& set(PointedType* nini) { this->take(nini);return *this;};
 
 //Klasa z rodziny wb_wskazników przeznaczona na uchwyt do lancuchow tekstowych
 //Nie przechowuje dlugosci lancucha wiec tez nie sprawdza.
-//(dlatego dziedziczy po wb_sptr, a nie wb_dynarray
+//(dlatego dziedziczy po wb_sptr, a nie wb_dynarray)
 //Z char* const char* kopiuje oczekujac ze koncza sie '\0' .
 //Pomiedzy obiektami wb_pchar bez atrybutu const zawartosc jest
 //jak zwykle "sztafetowana"!!!
@@ -117,9 +117,9 @@ class wb_pchar:public wb_sptr<char>
 public:
 explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 	{ if(s>0 && (ptr=new char[s])!=NULL ) *ptr='\0'; }
-explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
 explicit wb_pchar(const wb_pchar& nini); //Konstruktor klonuj¹cy
 explicit wb_pchar(wb_pchar& nini);//Konstruktor sztafetuj¹cy
+explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
 ~wb_pchar() { dispose();}         //Destruktor
 void finalise() { dispose(); } //Wywolanie rownowa¿ne destruktorowi
 void dispose() //Zwalnia zaalokowan¹ pamiêc. Jak u¿yje dziedziczonego to siê pewnie nic nie stanie, ale...
