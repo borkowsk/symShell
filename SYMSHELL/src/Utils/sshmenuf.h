@@ -20,25 +20,30 @@ typedef void* ssh_menu_handle;
 ssh_menu_handle ssh_main_menu(); /* Daje uchwyt do g³ównego menu */
 
 ssh_menu_handle ssh_sub_menu(    /* Daje uchwyt do podmenu wg. pozycji */
-					ssh_menu_handle hMenu,				
-					unsigned    Position);
+                    ssh_menu_handle hMenu,				
+                    unsigned    Position);
 
 int ssh_get_item_position(  /* Odnajduje pozycje itemu w jakims menu */
                      ssh_menu_handle hMenu,
                      const char* ItemName);/* Return -1 if cant find such item */
 
 int	ssh_menu_add_item(			 /* Dodaje item do menu */
-					ssh_menu_handle hMenu,
-					const char* ItemName,
-					unsigned    Message,
-					unsigned    Flags DEF_VAL_IF_CPP(0));/* Default is ENABLE immediatelly */
+                    ssh_menu_handle hMenu,
+                    const char* ItemName,
+                    unsigned    Message,
+                    unsigned    Flags DEF_VAL_IF_CPP(0));/* Default is ENABLE immediatelly */
 
 int ssh_menu_mark_item(          /* Ustawia lub usuwa marker przy itemie */
-					ssh_menu_handle hMenu,
-					unsigned    Check,
-					unsigned    ItemCommandOrPosition,										
-					unsigned    asPosition DEF_VAL_IF_CPP(0));/*Have to be 1 for submenu checking*/
-					  
+                    ssh_menu_handle hMenu,
+                    unsigned    Check,
+                    unsigned    ItemCommandOrPosition,										
+                    unsigned    asPosition DEF_VAL_IF_CPP(0));/*Have to be 1 for submenu checking*/
+
+int ssh_menu_remove_item(          /* Usuwa item z menu */
+                    ssh_menu_handle hMenu,
+                    unsigned    ItemCommandOrPosition,
+                    unsigned    asPosition DEF_VAL_IF_CPP(0));
+
 int ssh_realize_menu(ssh_menu_handle hMenu);/* Zapewnia ze menu bedzie wygladac zgodnie z poprzednimi poleceniami */
 
 #ifdef unix
