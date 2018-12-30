@@ -77,7 +77,7 @@ if(strchr(format,'%')!=NULL)//Sa znaki formatujace
 	}
 	else
 	{
-	strcpy(bufor,format);
+		strncpy(bufor.get_ptr_val(),format,BUFSIZE);
 	}
 
 //Teraz powinien wylapac tabulacje
