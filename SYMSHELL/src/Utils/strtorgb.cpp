@@ -44,5 +44,8 @@ unsigned strtorgb(const char *s, char **endptr)
 		return val;
    }
    else
+   {
+        *endptr=(char*)s;
 		return 0;
+   }
 }
