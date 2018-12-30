@@ -33,6 +33,17 @@ using namespace std;
 #include "../../symshell.h"
 #include "../../sshutils.hpp"
 
+double distance(double X1,double X2,double Y1,double Y2)
+//Czêsto potrzebne w takich programach
+{
+	double dX=X2-X1;
+	double dY=Y2-Y1;
+	if(dX!=0 || dY!=0)
+	return sqrt(dX*dX+dY*dY);
+	else
+	return 0;
+}
+
 //#include "graphs.hpp"
 
 //Drukuje w obszarze nie wiekszym niz max_width. Zwraca width albo 0

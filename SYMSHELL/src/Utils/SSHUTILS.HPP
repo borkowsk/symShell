@@ -19,6 +19,8 @@
 #define M_PI_4      (0.785398163397448309616)
 #endif
 
+double distance(double X1,double X2,double Y1,double Y2);//Czêsto potrzebne w takich programach
+
 typedef ssh_color wb_color;
 
 extern unsigned lang_selector;//=0 //Dla zestawu funkcji lang(...)
