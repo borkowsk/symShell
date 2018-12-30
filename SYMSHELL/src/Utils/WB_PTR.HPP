@@ -241,7 +241,7 @@ wb_dynarray<T>::wb_dynarray(size_t s/*=0*/):size(s)  //konstruktor alokujacy
 	//	nini.size=0;
 	//	}
 
-
+/*
 template<class T> inline //Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
 wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
 													size(nini.size),ptr(nini.ptr)
@@ -250,7 +250,7 @@ wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
 	const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
 	const_cast<wb_dynarray<T>&>(nini).size=0;
 }
-
+*/
 
 
 template<class T> inline  //konstruktor wieloparametrowy inicjujacy itemy
