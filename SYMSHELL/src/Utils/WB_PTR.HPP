@@ -300,8 +300,7 @@ size_t alloc(size_t s)
 //Skrócenie wektora - przydatne przy czytaniu
 //ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
 size_t trunc(size_t s)
-	{
-	WBPTRLOG( "wb_dynnarray::trunc("<<s<<")" )
+	{																			WBPTRLOG( "wb_dynnarray::trunc("<<s<<")" )
 	if(ptr==NULL) //Bo wtedy bzdura
 			return 0;
 	assert(s>0); //Jak ma byc 0 to "dispose"!
