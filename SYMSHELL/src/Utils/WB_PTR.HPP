@@ -86,7 +86,7 @@ class wb_ptr:public wb_sptr<PointedType>
 public:
 explicit wb_ptr(PointedType* ini=NULL):wb_sptr<PointedType>(ini){} //Przejmuje wskaünik
 explicit wb_ptr(wb_ptr& nini); //Konstruktor transferujπcy uøywa :wb_sptr<PointedType>(nini)
-		 //destruktor niepotrzebny bo takijak dziedziczony
+							  //destruktor niepotrzebny bo taki jak dziedziczony
 //Przykrycie tych metod ktÛre zwracajπ wb_sptr<>, øeby zwraca≥y wb_ptr
 wb_ptr& operator = (PointedType* nini); //Przypisanie c-wskaünika odpowiedniego typu
 wb_ptr& operator = (wb_ptr& nini); //Przypisanie sztafetujπce (nie sptr bo wtedy nieuprawnione rozszserzenie operacji)
@@ -117,8 +117,6 @@ class wb_pchar:public wb_sptr<char>
 public:
 explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 	{ if(s>0 && (ptr=new char[s])!=NULL ) *ptr='\0'; }
-//explicit wb_pchar(char* ini): wb_sptr<char>(ini) //Dwuznacznosc semantyczna, wymusza jawne decyzje
-//		{}//Przypisanie danych
 explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
 explicit wb_pchar(const wb_pchar& nini); //Konstruktor klonujπcy
 explicit wb_pchar(wb_pchar& nini);//Konstruktor sztafetujπcy
@@ -155,6 +153,9 @@ friend bool replace(wb_pchar& bufor,const char* forrep,const char* whatins,bool 
 friend bool insert(wb_pchar& bufor,unsigned pos,const char* whatins);
 //Implementacja zapisu na strumien ze sprawdzaniem czy trzeba w \"
 static void write(ostream& s,const char* p,char enclos='\"');
+
+//explicit wb_pchar(char* ini): wb_sptr<char>(ini) //Dwuznacznosc semantyczna, wymusza jawne decyzje
+//		{}//Przypisanie danych
 };
 
 //Szablon bardzo prostej tablicy o rozmiarze dynamicznym
