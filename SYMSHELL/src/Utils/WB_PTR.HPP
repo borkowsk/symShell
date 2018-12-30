@@ -7,9 +7,9 @@
 //	wb_pchar- ptr to char[]
 //	wb_dynarray- dynamic array of
 //	wb_dynmatrix- dynamic matrix of
-// !!!:	ZawartoúÊ jest "sztefetowana" pomiedzy obiektami powyøszych typÛw -
+// !!!:	ZawartoÔøΩÔøΩ jest "sztefetowana" pomiedzy obiektami powyÔøΩszych typÔøΩw -
 // czyli w konstruktorze albo przypisaniu jest przenoszona a nie kopiowana.
-// Wersja z poprawkami 2012 i poczπtkiem przenoszenia implementacji poza klasy
+// Wersja z poprawkami 2012 i poczÔøΩtkiem przenoszenia implementacji poza klasy
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef __WB_PTR_HPP__
 #define __WB_PTR_HPP__
@@ -29,13 +29,13 @@
 using namespace std;
 #endif
 
-#include <cstdarg>			//Bo jest konstruktor z nieznana liczba parametrow
+#include <stdarg.h>			//Bo jest konstruktor z nieznana liczba parametrow
 #include <cassert>
 
 #include "platform.hpp"
 #include "wb_clone.hpp"
 
-#ifdef __BCPLUSPLUS__ //Ma k≥opoty w postaci masy warningÛw "code has no effect"
+#ifdef __BCPLUSPLUS__ //Ma kÔøΩopoty w postaci masy warningÔøΩw "code has no effect"
 #pragma warn -8019
 #endif
 
@@ -52,7 +52,7 @@ using namespace std;
 
 namespace wbrtm { //WOJCIECH BORKOWSKI RUN TIME LIBRARY
 
-//Szablon inteligentnego wskaznika dla typow sklarnych
+//Szablon inteligentnego wskaznika dla typow skalarnych
 template<class PointedType>
 class wb_sptr
 ////////////////////////////
@@ -61,27 +61,27 @@ protected:
 PointedType* ptr;
 
 public:
-explicit wb_sptr(PointedType* ini=NULL):ptr(ini){} //Przejmuje wskaünik
-explicit wb_sptr(wb_sptr& nini):ptr(nini.give()){} //Sztafetuje wskaünik z nini
-void dispose(); //Zwalnia zaalokowanπ pamiÍc
+explicit wb_sptr(PointedType* ini=NULL):ptr(ini){} //Przejmuje wskaÔøΩnik
+explicit wb_sptr(wb_sptr& nini):ptr(nini.give()){} //Sztafetuje wskaÔøΩnik z nini
+void dispose(); //Zwalnia zaalokowanÔøΩ pamiÔøΩc
 	~wb_sptr() { dispose(); } //DESTRUKTOR - SPECJALNIE NIE-JEST WIRTUALNY
-void finalise(){ dispose(); } //Wywolanie rownowaøne destruktorowi
+void finalise(){ dispose(); } //Wywolanie rownowaÔøΩne destruktorowi
 
 //Testy
 operator int () const; //Do sprawdzania czy nie pusty
 int OK() const; //Jawne sprawdzenie
 
 //Jawne i niejawne przekazania
-wb_sptr& operator = (PointedType* nini); //Przypisanie c-wskaünika
-wb_sptr& operator = (wb_sptr& nini);//Sztafetujπce przypisanie
-wb_sptr& operator = (const wb_sptr& nini);//Klonujπce przypisanie
-wb_sptr& transfer_from(wb_sptr& nini); //Jawnie nazwany operator sztafetujπcego przypisania
+wb_sptr& operator = (PointedType* nini); //Przypisanie c-wskaÔøΩnika
+wb_sptr& operator = (wb_sptr& nini);//SztafetujÔøΩce przypisanie
+wb_sptr& operator = (const wb_sptr& nini);//KlonujÔøΩce przypisanie
+wb_sptr& transfer_from(wb_sptr& nini); //Jawnie nazwany operator sztafetujÔøΩcego przypisania
 void take(PointedType* nini); //Wersja jawnego przekazania mu wskaznika
 PointedType*  give();//Zabiera obszar (wskazywany adres) spod zarzadu inteligentnego wskaznika!!!
 
-//DostÍp
-PointedType* get_ptr_val() const;//DostÍp wartoúci do c-wskaünika - trzeba uwaøaÊ
-PointedType& operator* () const; //DostÍp do wskazywanej zawartoúci
+//DostÔøΩp
+PointedType* get_ptr_val() const;//DostÔøΩp wartoÔøΩci do c-wskaÔøΩnika - trzeba uwaÔøΩaÔøΩ
+PointedType& operator* () const; //DostÔøΩp do wskazywanej zawartoÔøΩci
 };
 
 //... i szablon dla typow strukturalnych
@@ -90,20 +90,21 @@ class wb_ptr:public wb_sptr<PointedType>
 /////////////////////////////////////////
 {
 public:
-explicit wb_ptr(PointedType* ini=NULL):wb_sptr<PointedType>(ini){} //Przejmuje wskaünik
-explicit wb_ptr(wb_ptr& nini); //Konstruktor transferujπcy uøywa :wb_sptr<PointedType>(nini)
+explicit wb_ptr(PointedType* ini=NULL):wb_sptr<PointedType>(ini){} //Przejmuje wskaÔøΩnik
+explicit wb_ptr(wb_ptr& nini); //Konstruktor transferujÔøΩcy uÔøΩywa :wb_sptr<PointedType>(nini)
 							  //destruktor niepotrzebny bo taki jak dziedziczony
-//Przykrycie tych metod ktÛre zwracajπ wb_sptr<>, øeby zwraca≥y wb_ptr
-wb_ptr& operator = (PointedType* nini); //Przypisanie c-wskaünika odpowiedniego typu
-wb_ptr& operator = (wb_ptr& nini); //Przypisanie sztafetujπce (nie sptr bo wtedy nieuprawnione rozszserzenie operacji)
-wb_ptr& operator = (const wb_ptr& nini);//Analogiczne klonujπce przypisanie
+//Przykrycie tych metod ktÔøΩre zwracajÔøΩ wb_sptr<>, ÔøΩeby zwracaÔøΩy wb_ptr
+wb_ptr& operator = (PointedType* nini); //Przypisanie c-wskaÔøΩnika odpowiedniego typu
+wb_ptr& operator = (wb_ptr& nini); //Przypisanie sztafetujÔøΩce (nie sptr bo wtedy nieuprawnione rozszserzenie operacji)
+wb_ptr& operator = (const wb_ptr& nini);//Analogiczne klonujÔøΩce przypisanie
 wb_ptr& transfer_from(wb_ptr& nini); //Jawnie nazwany operator przypisania, przykrywa
 
 PointedType* operator -> () const;//Dodany operator -> dla wskaznika do klasy/struktury
 
-//Jeszcze jedno jawne przekazywanie wskaünika, tyle øe zwracajπce wartoúÊ. Moøe gdzieú uøywane
+//Jeszcze dwa jawne przekazywania wskaÔøΩnika, tyle ÔøΩe zwracajÔøΩce wartoÔøΩÔøΩ. MoÔøΩe gdzieÔøΩ uÔøΩywane
 wb_ptr& set(PointedType* nini) { this->take(nini);return *this;}
 //#pragma obsolete set //Borland?
+wb_ptr& assign(PointedType* nini) { this->take(nini);return *this;}
 
 //Konstruktor klonujacy nie ma zastosowania do klas abstrakcyjnych (What???)
 //wb_ptr(const wb_ptr<T>& nini):wb_sptr<T>(clone(nini.get_ptr_val()))
@@ -111,41 +112,42 @@ wb_ptr& set(PointedType* nini) { this->take(nini);return *this;}
 };
 
 
-//Klasa z rodziny wb_wskaznikÛw przeznaczona na uchwyt do lancuchow tekstowych
+//Klasa z rodziny wb_wskaznikÔøΩw przeznaczona na uchwyt do lancuchow tekstowych
 //Nie przechowuje dlugosci lancucha wiec tez nie sprawdza.
 //(dlatego dziedziczy po wb_sptr, a nie wb_dynarray)
 //Z char* const char* kopiuje oczekujac ze koncza sie '\0' .
 //Pomiedzy obiektami wb_pchar bez atrybutu const zawartosc jest
-//jak zwykle "sztafetowana"!!!
+//jak zwykle "sztafetowana", chyba ≈ºe const!!!
 class wb_pchar:public wb_sptr<char>
 ////////////////////////////////////////////////////////////////////////////////
 {
 public:
-	          wb_pchar(wb_pchar& nini);//Konstruktor sztafetujπcy
+	      wb_pchar(wb_pchar& nini);//Konstruktor sztafetujÔøΩcy
+           // wb_pchar(wb_pchar nini);//Konstruktor podw√≥jnie sztafetujƒÖcy?
 
 explicit      wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 	{ if(s>0 && (ptr=new char[s])!=NULL ) *ptr='\0'; }
 explicit     wb_pchar(const char* ini);  //Niby bezpieczny bo tylko kopiuje dane
-explicit     wb_pchar(const wb_pchar& nini); //Konstruktor klonujπcy
+/*explicit*/ wb_pchar(const wb_pchar& nini); //Konstruktor klonujÔøΩcy
 
 
 ~wb_pchar() { dispose();}         //Destruktor
-void finalise() { dispose(); } //Wywolanie rownowaøne destruktorowi
-void dispose() //Zwalnia zaalokowanπ pamiÍc. Jak uøyje dziedziczonego to siÍ pewnie nic nie stanie, ale...
-	{ if(ptr) delete [] ptr; ptr=NULL;/*dla sprawdzeÒ*/}
+void finalise() { dispose(); } //Wywolanie rownowaÔøΩne destruktorowi
+void dispose() //Zwalnia zaalokowanÔøΩ pamiÔøΩc. Jak uÔøΩyje dziedziczonego to siÔøΩ pewnie nic nie stanie, ale...
+	{ if(ptr) delete [] ptr; ptr=NULL;/*dla sprawdzeÔøΩ*/}
 
-wb_pchar& operator = (const char* nini); //Operator klonujπcego przypisania
-wb_pchar& operator = (wb_pchar& nini); //Operator transferujπcego przypisania
-wb_pchar& operator = (const wb_pchar& nini); //Operator klonujπcego przypisania
+wb_pchar& operator = (const char* nini); //Operator klonujÔøΩcego przypisania
+wb_pchar& operator = (wb_pchar& nini); //Operator transferujÔøΩcego przypisania
+wb_pchar& operator = (const wb_pchar& nini); //Operator klonujÔøΩcego przypisania
 
-void alloc(size_t s);// Alokacja do nowego rozmiaru, utrata starej zawartoúci!
-size_t get_size() const; //D≥ugoúÊ ≥aÒcucha w wersji C
-const char* get() const; //SkrÛcone get_ptr_val();
+void alloc(size_t s);// Alokacja do nowego rozmiaru, utrata starej zawartoÔøΩci!
+size_t get_size() const; //DÔøΩugoÔøΩÔøΩ ÔøΩaÔøΩcucha w wersji C
+const char* get() const; //SkrÔøΩcone get_ptr_val();
 						//Tu nie sprawdzamy czy NULL - niech sie martwi wolajacy
 
 char& operator [] (size_t index) const; //Pozwala (?) na zmiana zawartosci ale nie wskaznika
 
-//A la C-owe stringi - to co moøna bezboleúnie
+//A la C-owe stringi - to co moÔøΩna bezboleÔøΩnie
 wb_pchar& prn(const char* format,...); //Wyprowadza na zawartosc. Nie sprawdza rozmiaru!!!
 wb_pchar& add(const char* format,...); //Dopisuje do zawartosci. Nie sprawdza rozmiaru!!!
 friend size_t strlen(const wb_pchar& what); //Atrapa c-owego strlen
@@ -178,25 +180,25 @@ public:
 	explicit wb_dynarray(size_t s=0);
 	//konstruktor wieloparametrowy inicjujacy itemy
 	explicit wb_dynarray(size_t s,T /*first,second,...*/...);
-	//konstruktor wypeniuajπcy kopiami FillVal
+	//konstruktor wypeniuajÔøΩcy kopiami FillVal
 	explicit  wb_dynarray(const T& FillVal,size_t s);
 
 	//Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJACY - i tak jest niebezpieczny
-	wb_dynarray(const wb_dynarray& nini):size(nini.size),ptr(nini.ptr)//!!! Moøe siÍ zdarzyÊ, øe kopiujemy pustπ!
+	wb_dynarray(const wb_dynarray& nini):size(nini.size),ptr(nini.ptr)//!!! MoÔøΩe siÔøΩ zdarzyÔøΩ, ÔøΩe kopiujemy pustÔøΩ!
 		{																		WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
 		const_cast<wb_dynarray<T>&>(nini).ptr=NULL; //Wymuszenie transferowania nawet na obiekcie
 		const_cast<wb_dynarray<T>&>(nini).size=0;   //typu const!
 		}
 
 	//konstruktor transferujacy.    TODO
-	//Niestety uniemozliwia(≥?) niektore konstrukcje, a jakos "zaslania" ten z "const wb_dynarray&"
+	//Niestety uniemozliwia(ÔøΩ?) niektore konstrukcje, a jakos "zaslania" ten z "const wb_dynarray&"
 	//explicit wb_dynarray(wb_dynarray& nini):size(nini.size),ptr(nini.ptr)
 	//	{
 	//	WBPTRLOG( "wb_dynarray::TRANSFER CONSTRUCTOR("<<((void*)&nini)<<")" )
 	//	nini.ptr=NULL;
 	//	nini.size=0;
 	//	}
-	~wb_dynarray(); //destruktor zwalnia pamiec - po prostu wo≥o dispose()
+	~wb_dynarray(); //destruktor zwalnia pamiec - po prostu woÔøΩo dispose()
 
 size_t 	alloc(size_t s);  //"Pierwotna" alokacja wektora
 T*  	give_dynamic_ptr_val(size_t& outsize);  //Zabiera adres zpod zarzadu tablicy!!!
@@ -207,33 +209,33 @@ int 	OK()   const { return ptr!=NULL; }
 int 	IsOK() const { return ptr!=NULL && size!=0; }
 size_t 	get_size() const	{ return size;}  //Rozmiar wewnetrznego wektora
 
-T& operator [] (size_t index) const;//pe≥ny dostep do zawartoscu pojedynczego itemu
+T& operator [] (size_t index) const;//peÔøΩny dostep do zawartoscu pojedynczego itemu
 
 T* get_ptr_val(size_t offset=0,size_t interest=0) const; //Daje bezposredni dostep do wewnetrznego wektora
 														 //ale nie wolno go zdealokowac!!!
 //Umieszczenie dynamicznie alokowanego wektora jako tablicy wewnatrz dynarray
 void take(T* iptr,size_t isiz);  //nic nie zwraca
 wb_dynarray<T>& set_dynamic_ptr_val(T* iptr,size_t isiz);//i zwraca *this
-//Transfer czyli przÍjÍcie zawartoúci od parametru typu wb_dynarray
+//Transfer czyli przÔøΩjÔøΩcie zawartoÔøΩci od parametru typu wb_dynarray
 void take(wb_dynarray& nini);    //nic nie zwraca
 
 wb_dynarray<T>& operator = (wb_dynarray<T>& nini); //Transferujacy operator przypisania, zwraca *this
 
 //Rozne wygodne funkcje pomocnicze
-void fill(const T& FillVal); //Wype≥nienie kopiπ parametru
+void fill(const T& FillVal); //WypeÔøΩnienie kopiÔøΩ parametru
 void shift_left(size_t index);//Przemieszczenie pojedynczego elementu z pozycji 0 na koniec
 size_t expand(size_t s,const T& FillVal); //Rozszerzenie wektora - przydatne do rozbudowy tablicy
 										  //ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
-										  //podobnie jak poniøsze metody, ktÛre teø opakowujπ memcpy
-size_t trunc(size_t s);//SkrÛcenie wektora - przydatne przy czytaniu (umoøliwia oszczÍdnoúÊ pamiÍci)
-void copy_from(const T Where[],size_t how_many_elements);//Kopiowanie zawartoúci
-void copy_from(const wb_dynarray<T>& Where); //Kopiowanie zawartoúci
+										  //podobnie jak poniÔøΩsze metody, ktÔøΩre teÔøΩ opakowujÔøΩ memcpy
+size_t trunc(size_t s);//SkrÔøΩcenie wektora - przydatne przy czytaniu (umoÔøΩliwia oszczÔøΩdnoÔøΩÔøΩ pamiÔøΩci)
+void copy_from(const T Where[],size_t how_many_elements);//Kopiowanie zawartoÔøΩci
+void copy_from(const wb_dynarray<T>& Where); //Kopiowanie zawartoÔøΩci
 };
 
 
 //Szablon prostej tablicy dwuwymiarowej
 //o dowolnej ilosci wierszy i dowolnej dlugosci kazdego wiersza.
-//Kontrole zakresow itp assercje dziedziczy po klasie macieøystej
+//Kontrole zakresow itp assercje dziedziczy po klasie macieÔøΩystej
 template<class T>
 class wb_dynmatrix:public wb_dynarray< wb_dynarray<T> >
 /////////////////////////////////////////////////////////////
@@ -250,7 +252,7 @@ public:
 	explicit wb_dynmatrix(size_t s,wb_dynarray<T>* ...):wb_dynarray<wb_dynarray<T> >(s)
 		{
 		WBPTRLOG( "wb_dynmatrix::CONSTRUCTOR("<<get_size()<<",wb_dynarray<T>* ...)" )
-		assert(get_size()>=1);
+		assert(this->get_size()>=1);
 
 		va_list list;
 		va_start(list,s);
@@ -272,7 +274,7 @@ public:
 		dispose();
 		}
 
-//dealokacja wektora wektorÛw
+//dealokacja wektora wektorÔøΩw
 void dispose()
 	{
 	WBPTRLOG( "wb_dynmatrix::dispose :"<<get_size() )
@@ -281,7 +283,7 @@ void dispose()
 
 //Rozbudowana alokacja zstepujaca
 size_t alloc(size_t y,size_t x);
-//Wype≥nianie
+//WypeÔøΩnianie
 void fill(const T& Val);
 
 };
@@ -294,7 +296,7 @@ inline size_t wb_dynmatrix<T>::alloc(size_t y,size_t x)
 	{
 	WBPTRLOG( "wb_dynmatrix::alloc("<<y<<','<<x<<")" )
 	assert(y>0);
-	if(get_size()>0)
+	if(this->get_size()>0)
 		dispose();
 
 	if(wb_dynarray< wb_dynarray<T> >::alloc(y)==0)
@@ -307,13 +309,13 @@ inline size_t wb_dynmatrix<T>::alloc(size_t y,size_t x)
 						return 0;
 				}
 
-	return get_size();
+	return this->get_size();
 	}
 
 template<class T>
 inline void wb_dynmatrix<T>::fill(const T& Val)
     {
-    size_t i,H=get_size();
+    size_t i,H=this->get_size();
     for(i=0;i<H;i++)//Po wierszach
         {
         size_t L=(*this)[i].get_size();
@@ -348,7 +350,7 @@ void  wb_sptr<PointedType>::take(PointedType* nini) //Wersja jawnego oddania wsk
 	ptr=nini;
 	}
 template<class PointedType> inline //wb_sptr::
-wb_sptr<PointedType>& wb_sptr<PointedType>::operator = (const wb_sptr<PointedType>& nini)//Klonujπce przypisanie
+wb_sptr<PointedType>& wb_sptr<PointedType>::operator = (const wb_sptr<PointedType>& nini)//KlonujÔøΩce przypisanie
 	{
 	}
 
@@ -406,7 +408,7 @@ wb_ptr<PointedType>::wb_ptr(wb_ptr<PointedType>& nini):wb_sptr<PointedType>(nini
 	}
 
 template<class PointedType> inline
-wb_ptr<PointedType>& wb_ptr<PointedType>::operator = (PointedType* nini) //Przypisanie wskaünika odpowiedniego typu
+wb_ptr<PointedType>& wb_ptr<PointedType>::operator = (PointedType* nini) //Przypisanie wskaÔøΩnika odpowiedniego typu
 	{
 	return set(nini);
 	}
@@ -415,15 +417,15 @@ wb_ptr<PointedType>& wb_ptr<PointedType>::operator = (PointedType* nini) //Przyp
 template<class PointedType> inline
 wb_ptr<PointedType>& wb_ptr<PointedType>::operator = (const wb_ptr<PointedType>& nini) //nie sptr bo wtedy nieuprawnione rozszserzenie operacji
 	{																			WBPTRLOG( "wb_ptr::CLONE oper = :"<<nini.ptr<<"->"<<ptr )
-	dispose();
-	ptr=clone( nini.get_ptr_val() );
+	this->dispose();
+	this->ptr=clone( nini.get_ptr_val() );
 	return *this;
 	}
 
 template<class PointedType> inline
-wb_ptr<PointedType>& wb_ptr<PointedType>::operator = (wb_ptr<PointedType>& nini)//Przypisanie sztafetujπce (nie sptr bo wtedy nieuprawnione rozszserzenie operacji)
+wb_ptr<PointedType>& wb_ptr<PointedType>::operator = (wb_ptr<PointedType>& nini)//Przypisanie sztafetujÔøΩce (nie sptr bo wtedy nieuprawnione rozszserzenie operacji)
 	{																			WBPTRLOG( "wb_ptr::TRANSFER oper = :"<<nini.ptr<<"->"<<ptr )
-	dispose();
+	this->dispose();
 	this->ptr=nini.give();
 	return *this;
 	}
@@ -431,7 +433,7 @@ wb_ptr<PointedType>& wb_ptr<PointedType>::operator = (wb_ptr<PointedType>& nini)
 template<class PointedType> inline
 wb_ptr<PointedType>& wb_ptr<PointedType>::transfer_from(wb_ptr<PointedType>& nini) //Jawnie nazwany operator przypisania, przykrywa
 	{
-	dispose();
+	this->dispose();
 	this->ptr=nini.give();
 	return *this;
 	}
@@ -459,14 +461,15 @@ wb_pchar::wb_pchar(const char* ini):wb_sptr<char>(NULL)  //Tylko dane
 inline
 wb_pchar::wb_pchar(const wb_pchar& nini):wb_sptr<char>(NULL)
 	{																			WBPTRLOG( "wb_pchar::COPY CONSTRUCTOR :"<<(nini.ptr?nini.ptr:"@") )
-	ptr=clone_str(nini.get_ptr_val());//Kopiowanie danych
+          ptr=clone_str(nini.get_ptr_val());//Kopiowanie danych
 	}
-
+//
 inline
 wb_pchar::wb_pchar(wb_pchar& nini):wb_sptr<char>(nini)
-	{																			WBPTRLOG( "wb_pchar::TRANSFER CONSTRUCTOR :"<<(ptr?ptr:"@") )
-	  /* tylko test */															assert(nini.ptr==NULL);//Inicjator traci dane. Jak nie to znaczy ze zaszlo niezamierzone kopiowanie
+	{	
+          nini.ptr=NULL;                                                        WBPTRLOG( "wb_pchar::TRANSFER CONSTRUCTOR :"<<(ptr?ptr:"@") )	  /* tylko test */															assert(nini.ptr==NULL);//Inicjator traci dane. Jak nie to znaczy ze zaszlo niezamierzone kopiowanie
 	}
+//
 
 inline
 wb_pchar& wb_pchar::operator = (const char* nini)
@@ -541,7 +544,7 @@ template<class T> inline //Konstruktor "kopiujacy" - faktycznie i tak TRANSFERUJ
 wb_dynarray<T>::wb_dynarray(const wb_dynarray& nini):
 													size(nini.size),ptr(nini.ptr)
 {																				WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
-																//assert(size!=0); Moøe siÍ zdarzyÊ, øe kopiujemy pustπ!
+																//assert(size!=0); MoÔøΩe siÔøΩ zdarzyÔøΩ, ÔøΩe kopiujemy pustÔøΩ!
 	const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
 	const_cast<wb_dynarray<T>&>(nini).size=0;
 }
@@ -593,7 +596,7 @@ size_t wb_dynarray<T>::alloc(size_t s)
 	return s;
 }
 
-//SkrÛcenie wektora - przydatne przy czytaniu
+//SkrÔøΩcenie wektora - przydatne przy czytaniu
 //ale niebezpieczne(memcpy) lub kosztowne(for) jak T ma konstruktory i destruktory
 template<class T> inline
 size_t wb_dynarray<T>::trunc(size_t s)
@@ -601,14 +604,14 @@ size_t wb_dynarray<T>::trunc(size_t s)
 	if(ptr==NULL) //Bo wtedy bzdura
 			return 0;															assert(s>0); //Jak ma byc 0 to "dispose"!
 																				assert(s<size); //Tylko realne skracanie jest bezpieczne
-	T* tmp=new T[s];  //Ewentualne konstruktory zadzia≥ajπ!
+	T* tmp=new T[s];  //Ewentualne konstruktory zadziaÔøΩajÔøΩ!
 
 //	memcpy(tmp,ptr,s*sizeof(T));
-//	delete (void*)ptr; //?Zwalnianie bez wywo≥ywania moøliwych destruktorÛw
+//	delete (void*)ptr; //?Zwalnianie bez wywoÔøΩywania moÔøΩliwych destruktorÔøΩw
 
 	for(unsigned i=0;i<s;i++)
 		tmp[i]=ptr[i]; //Dla klas uzyty operator przypisania
-	dispose();  	   //Kasacja starego wektora - destruktory zadzia≥ajπ!
+	dispose();  	   //Kasacja starego wektora - destruktory zadziaÔøΩajÔøΩ!
 
 	ptr=tmp;    //Zapamietanie nowego
 	size=s;
@@ -621,17 +624,17 @@ template<class T> inline
 size_t wb_dynarray<T>::expand(size_t s,const T& FillVal)
 {																				WBPTRLOG( "wb_dynnarray::expand("<<s<<")" )
 	if(ptr==NULL) //Bo wtedy bzdura
-			return 0;														   	assert(s>size); //PowiÍkszamy!
+			return 0;														   	assert(s>size); //PowiÔøΩkszamy!
 	T* tmp=new T[s];
 
 	//	memcpy(tmp,ptr,s*sizeof(T));
-	//	delete (void*)ptr; //?Zwalnianie bez wywo≥ywania moøliwych destruktorÛw
+	//	delete (void*)ptr; //?Zwalnianie bez wywoÔøΩywania moÔøΩliwych destruktorÔøΩw
 
-	//Bezpieczne choÊ nieefektywny przepisanie zawartoúci komÛrek
+	//Bezpieczne choÔøΩ nieefektywny przepisanie zawartoÔøΩci komÔøΩrek
 	for(unsigned i=0;i<size;i++)
 		tmp[i]=ptr[i]; //Dla klas uzyty operator przypisania
 
-	//Jakieú wype≥nienie nowych komÛrek
+	//JakieÔøΩ wypeÔøΩnienie nowych komÔøΩrek
 	for(unsigned i=size;i<s;i++)
 		tmp[i]=FillVal;//Dla klas uzyty operator przypisania
 
@@ -689,7 +692,7 @@ T* wb_dynarray<T>::get_ptr_val(size_t offset/*=0*/,size_t interest/*=0*/) const
 //Zabiera adres zpod zarzadu tablicy!!!
 template<class T> inline
 T*  wb_dynarray<T>::give_dynamic_ptr_val(size_t& outsize)
-{   //Na wyjúcie
+{   //Na wyjÔøΩcie
 	T* pom=ptr;
 	outsize=size;
 	//kasowanie
@@ -755,11 +758,11 @@ void wb_dynarray<T>::fill(const T& Val)
 }
 
 //Przemieszczenie pojedynczego elementu z pozycji 0 na koniec
-//Uøywa memcpy ale niczego nie likwiduje wiÍc to chyba nie problem
+//UÔøΩywa memcpy ale niczego nie likwiduje wiÔøΩc to chyba nie problem
 template<class T> inline
 void wb_dynarray<T>::shift_left(size_t index)
 {
-	char bufor[sizeof(T)];														assert(ptr!=NULL);
+	char bufor[sizeof(T)];							assert(ptr!=NULL);
 																				assert(index<size);
 	if(index>=size-1) return;//Nic nie trzeba robic
 	memcpy(bufor,ptr+index,sizeof(T));
@@ -768,19 +771,6 @@ void wb_dynarray<T>::shift_left(size_t index)
 	memcpy(ptr+(size-1),bufor,sizeof(T));
 }
 
-/*
-template<class T> inline
-void wb_dynarray<T>::mingle(size_t N) //Zamienia miejscami N par
-//Ale musia≥by mieÊ zawsze dostÍp do randomizera, a zastosowanie jest rzadkie raczej
-{
-	char bufor[sizeof(T)];														assert(ptr!=NULL);
-																				assert(index<size);
-	if(index>=size-1) return;//Nic nie trzeba robic
-	memcpy(bufor,ptr+index,sizeof(T));
-	...
-}
-*/
-
 template<class T> inline
 void wb_dynarray<T>::copy_from(const T Where[],size_t how_many_elements)
 {																				assert(how_many_elements<=size);
@@ -788,14 +778,15 @@ void wb_dynarray<T>::copy_from(const T Where[],size_t how_many_elements)
 }
 
 template<class T> inline
-void copy_from(const wb_dynarray<T>& Where)
-{																				assert(Where.get_size()<=size);
-    memcpy(ptr,Where.get_ptr_val(),Where.get_size()*sizeof(T));
+void wb_dynarray<T>::copy_from(const wb_dynarray<T>& Where)
+{										assert(Where.get_size()<=this->size);
+    memcpy( ptr, Where.get_ptr_val(), Where.get_size()*sizeof(T) );
 }
 
-//"ZAPRZYJAèNIONE" FUNKCJE POMOCNICZE
+
+//"ZAPRZYJAÔøΩNIONE" FUNKCJE POMOCNICZE
 /////////////////////////////////////
-//Operacje ≥aÒscuchowe, wypelnianie tablic i macierzy
+//Operacje ÔøΩaÔøΩscuchowe, wypelnianie tablic i macierzy
 //////////////////////////////////////////////////////////////
 
 inline //friend
@@ -848,7 +839,7 @@ inline void fill(wb_dynarray<T>& Tab,const T& Val)
 }
 
 //Deklaracje I/O dla inteligentnych wskaznikow
-//implementacja musi byc w innym pliku, i to raczej cpp niø hpp
+//implementacja musi byc w innym pliku, i to raczej cpp niÔøΩ hpp
 /////////////////////////////////////////////////////////////////
 #if	HIDE_WB_PTR_IO != 1
 
@@ -873,7 +864,7 @@ ostream& operator<<(ostream&,const wb_dynmatrix<T>&);
 template<class T>
 istream& operator>>(istream&,wb_dynmatrix<T>&);
 
-//Iplementacja zapisu lancucha znakÛw na strumien ze sprawdzaniem czy trzeba w \"
+//Iplementacja zapisu lancucha znakÔøΩw na strumien ze sprawdzaniem czy trzeba w \"
 void escaped_pchar_write(std::ostream& s,const char* p,char enclos='\"');
 
 #endif
