@@ -103,7 +103,7 @@ public:
 		}
 	
 	wb_dynarray(wb_dynarray& nini):size(nini.size),ptr(nini.ptr)
-		{ nini.ptr=NULL;}
+		{ nini.ptr=NULL;nini.size=0;}
 	
 	~wb_dynarray()
 		{ dispose(); }
@@ -116,6 +116,7 @@ void dispose()
 	if(ptr) delete []ptr;	
 #endif	
 	ptr=NULL;
+	size=0;
 	}
 
 void alloc(size_t s)
@@ -133,6 +134,7 @@ wb_dynarray& operator = (wb_dynarray& nini)
 	ptr=nini.ptr;
 	size=nini.size;
 	nini.ptr=NULL;
+	nini.size=0;
 	return *this;
 	}
 
@@ -172,7 +174,7 @@ T* get_ptr_val(size_t offset=0)
 T*  give()
 	{
 	T* pom=ptr;
-	ptr=NULL;
+	ptr=NULL;size=0;
 	return pom;
 	}
 
