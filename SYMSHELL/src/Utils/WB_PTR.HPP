@@ -29,7 +29,7 @@
 using namespace std;
 #endif
 
-#include <stdarg.h>			//Bo jest konstruktor z nieznana liczba parametrow
+#include <cstdarg>			//Bo jest konstruktor z nieznana liczba parametrow
 #include <cassert>
 
 #include "platform.hpp"
@@ -102,7 +102,7 @@ wb_ptr& transfer_from(wb_ptr& nini); //Jawnie nazwany operator przypisania, przy
 PointedType* operator -> () const;//Dodany operator -> dla wskaznika do klasy/struktury
 
 //Jeszcze jedno jawne przekazywanie wskaŸnika, tyle ¿e zwracaj¹ce wartoœæ. Mo¿e gdzieœ u¿ywane
-wb_ptr& set(PointedType* nini) { this->take(nini);return *this;};
+wb_ptr& set(PointedType* nini) { this->take(nini);return *this;}
 //#pragma obsolete set //Borland?
 
 //Konstruktor klonujacy nie ma zastosowania do klas abstrakcyjnych (What???)
