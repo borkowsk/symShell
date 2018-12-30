@@ -671,6 +671,7 @@ PointedType* wb_ptr<PointedType>::operator -> () const
 	return this->ptr;
 	}
 
+inline
 wb_pchar::wb_pchar(const char* ini):wb_sptr<char>(NULL)  //Tylko dane
 	{
 	ptr=clone_str(ini);//Kopiowanie danych
@@ -681,17 +682,19 @@ wb_pchar::wb_pchar(const char* ini):wb_sptr<char>(NULL)  //Tylko dane
 //wb_pchar::wb_pchar(char* ini):
 //			wb_sptr<char>(ini)
 //		{}//Przypisanie danych
-
+inline
 wb_pchar::wb_pchar(const wb_pchar& nini):wb_sptr<char>(NULL)
 	{																			WBPTRLOG( "wb_pchar::COPY CONSTRUCTOR :"<<(nini.ptr?nini.ptr:"@") )
 	ptr=clone_str(nini.get_ptr_val());
 	}//Kopiowanie danych
 
+inline
 wb_pchar::wb_pchar(wb_pchar& nini):wb_sptr<char>(nini)
 	{																			WBPTRLOG( "wb_pchar::TRANSFER CONSTRUCTOR :"<<(ptr?ptr:"@") )
 																				assert(nini.ptr==NULL);//Inicjator traci dane. Jak nie to znaczy ze zaszlo niezamierzone kopiowanie
 	}
 
+inline
 wb_pchar& wb_pchar::operator = (const char* nini)
 	{																			WBPTRLOG( "wb_pchar::oper = (const char*) :"<<(nini?nini:"@")<<"->"<<(ptr?ptr:"@") )
 	dispose();
@@ -699,6 +702,7 @@ wb_pchar& wb_pchar::operator = (const char* nini)
 	return *this;
 	}
 
+inline
 wb_pchar& wb_pchar::operator = (wb_pchar& nini)
 	{																			WBPTRLOG( "wb_pchar::TRANSFER oper = :"<<(nini.ptr?nini.ptr:"@")<<"->"<<(ptr?ptr:"@") )
 	dispose();
@@ -706,6 +710,7 @@ wb_pchar& wb_pchar::operator = (wb_pchar& nini)
 	return *this;
 	}
 
+inline
 wb_pchar& wb_pchar::operator = (const wb_pchar& nini)
 	{																			WBPTRLOG( "wb_pchar::CLONE oper = :"<<(nini.ptr?nini.ptr:"@")<<"->"<<(ptr?ptr:"@") )
 	dispose();
@@ -713,6 +718,7 @@ wb_pchar& wb_pchar::operator = (const wb_pchar& nini)
 	return *this;
 	}
 
+inline
 void wb_pchar::alloc(size_t s)
 	{																			assert(s>0);
 	dispose();
@@ -720,16 +726,19 @@ void wb_pchar::alloc(size_t s)
 	*ptr='\0';
 	}
 
+inline
 char& wb_pchar::operator [] (size_t index) const //Pozwala na zmiana zawartosci ale nie wskaznika
 	{																			assert(ptr!=NULL);
 	return ptr[index];
 	}
 
+inline
 size_t wb_pchar::get_size() const
 	{
 	return ptr?(::strlen(ptr)):(0);
 	}
 
+inline
 const char* wb_pchar::get() const
 	{	//Tu nie sprawdzamy czy NULL - niech sie martwi wolajacy
 	return get_ptr_val();
