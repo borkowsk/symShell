@@ -13,35 +13,29 @@
 #ifndef __WB_PTR_HPP__
 #define __WB_PTR_HPP__
 
-#ifndef __cplusplus
-#error C++ required
-#endif
-
-#if _MSC_VER > 1000
-#pragma warning( disable : 4521 4522 )	//multiple copy constructor/operator -bo osobne dla const char* i char* 
-//#pragma warning( disable : 4512 )		//assignment operator could not be generated 
-#endif // _MSC_VER > 1000
-
 #ifndef HIDE_WB_PTR_IO 
 #define HIDE_WB_PTR_IO 0
 #endif
 
 #ifndef DEBUG_WB_PTR
-#define DEBUG_WB_PTR 0
+#define DEBUG_WB_PTR 1
 #endif
 
 #if DEBUG_WB_PTR == 1
-#include <iostream.h>
 #define WBPTRLOG( _P_ )  {cerr<<((void*)this)<<"->"<< _P_ <<'\n';}
 #else
-class istream;//Obecne tez w innych deklaracjach
-class ostream;//ale bez implementacji
 #define WBPTRLOG( _P_ )
 #endif
 
 #include <stdarg.h>			//Jest konstruktor z nieznana liczba parametrow
 #include <assert.h>
+
+#include <iostream>
+using namespace std;
+
 #include "wb_clone.hpp"
+
+namespace wbrtm { //WOJCIECH BORKOWSKI RUN TIME LIBRARY
 
 //Szablon inteligentnego wskaznika dla typow sklarnych
 template<class T>
@@ -134,7 +128,9 @@ class wb_ptr:public wb_sptr<T>
 {
 public:
 	explicit wb_ptr(T* ini=NULL):wb_sptr<T>(ini)
-	{}
+	{
+       WBPTRLOG( "wb_ptr::EXPLICIT FROM PTR CONSTRUCTOR :"<<ptr )
+    }
 
 	wb_ptr(wb_ptr& nini):wb_sptr<T>(nini)
 	{
@@ -200,13 +196,16 @@ class wb_pchar:public wb_sptr<char>
 ///////////////////////////////////
 {
 public:
-	explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
+
+explicit 
+wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 	{ 
 	if(s>0) ptr=new char[s];
 	if(ptr!=NULL) *ptr='\0';
 	}
 
-	explicit wb_pchar(const char* ini):wb_sptr<char>(NULL)
+explicit 
+wb_pchar(const char* ini):wb_sptr<char>(NULL)
 	{
 	ptr=clone_str(ini);//Kopiowanie danych
 	}
@@ -217,13 +216,13 @@ public:
 //			wb_sptr<char>(ini)
 //		{}//Przypisanie danych
 
-	wb_pchar(const wb_pchar& nini):wb_sptr<char>(NULL)
+wb_pchar(const wb_pchar& nini):wb_sptr<char>(NULL)
 	{
 	WBPTRLOG( "wb_pchar::COPY CONSTRUCTOR :"<<(nini.ptr?nini.ptr:"@") )
 	ptr=clone_str(nini.get_ptr_val());
 	}//Kopiowanie danych
 
-	wb_pchar(wb_pchar& nini):wb_sptr<char>(nini)
+wb_pchar(wb_pchar& nini):wb_sptr<char>(nini)
 	{
 	WBPTRLOG( "wb_pchar::TRANSFER CONSTRUCTOR :"<<(ptr?ptr:"@") )
 	assert(nini.ptr==NULL);//Inicjator traci dane. Jak nie to znaczy ze zaszlo niezamierzone kopiowanie
@@ -270,7 +269,7 @@ char& operator [] (size_t index) const //Pozwala na zmiana zawartosci ale nie ws
 
 size_t get_size() const
 	{ 
-	return ptr?strlen(ptr):0;
+		return ptr?(::strlen(ptr)):(0);
 	}
 
 const char* get() const
@@ -283,15 +282,19 @@ const char* get() const
 wb_pchar& prn(const char* format,...);
 
 //Dopisuje do zawartosci. Nie sprawdza rozmiaru!!!
-wb_pchar& cat(const char* format,...);
+wb_pchar& add(const char* format,...);
 
 //Implementacja zapisu na strumien ze sprawdzaniem czy trzeba w \"
 static 
 void write(ostream& s,const char* p,char enclos='\"');
 
-//Zamienia fragment lancucha forrep zawartego w obiekcie wb_pchar  na lancuch whatins
+//Zamienia wszystkie lancuchy forrep zawarte w obiekcie wb_pchar na lancuchy whatins - bufor jest sztafetowany!!!
 friend
-bool replace(wb_pchar& bufor,const char* forrep,const char* whatins,bool fullwords);//case sensitive bo brak funkcji w rodzaju stristr
+bool replace(wb_pchar& bufor,const char* forrep,const char* whatins,bool fullwords,unsigned startpos=0);//case sensitive bo brak funkcji w rodzaju stristr
+
+//Wstawia lancuch do bufora na okreslonej pozycji - bufor jest sztafetowany!!!
+friend
+bool insert(wb_pchar& bufor,unsigned pos,const char* whatins);
 
 friend
 size_t strlen(const wb_pchar& what)
@@ -322,6 +325,11 @@ const char* strchr(const wb_pchar& what,const char c)
 	{
 		return ::strchr(what.get(),c);
 	}
+friend 
+const char* strstr(const wb_pchar& what,const char* s)
+	{
+		return ::strstr(what.get(),s);
+	}
 
 };
 
@@ -338,7 +346,8 @@ public:
 	explicit wb_dynarray(size_t s=0):size(s)
 		{ 
 		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<')' )		
-		if(s>0)	ptr=new T[s];
+															   //assert(size!=0);
+		if(size>0)	ptr=new T[s];
 			else ptr=NULL;
 		}
 
@@ -353,7 +362,8 @@ public:
 	//Konstruktor "kopiujacy" - musi byc forsowany wiec jest niebezpieczny
 	wb_dynarray(const wb_dynarray& nini/*,bool copy=false*/):size(nini.size),ptr(nini.ptr)
 		{
-		WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )		
+		WBPTRLOG( "wb_dynarray::COPY CONSTRUCTOR("<<((void*)&nini)<<")" )
+																assert(size!=0);
 		const_cast<wb_dynarray<T>&>(nini).ptr=NULL;
 		const_cast<wb_dynarray<T>&>(nini).size=0;
 		}
@@ -362,8 +372,8 @@ public:
 	//konstruktor wieloparametrowy inicjujacy itemy
 	explicit wb_dynarray(size_t s,T /*first,second,...*/...):size(s)
 		{
-		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<",T ...)" )		
-		assert(s>=1); 
+		WBPTRLOG( "wb_dynarray::CONSTRUCTOR("<<size<<",T ...)" )
+																assert(size>=1); 
 		ptr=new T[s];
 		assert(ptr!=NULL/*After allocation*/);
 	
@@ -393,7 +403,7 @@ int IsOK() const
 	}
 
 //Alokacja wektora
-int alloc(size_t s)
+size_t alloc(size_t s)
 	{
 	WBPTRLOG( "wb_dynnarray::alloc("<<s<<")" )
 	assert(s>0);
@@ -406,6 +416,21 @@ int alloc(size_t s)
 	size=s;
 	return s;
 	}
+
+//Skrócenie wektora - przydatne przy czytaniu
+size_t trunc(size_t s)
+    {
+    WBPTRLOG( "wb_dynnarray::trunc("<<s<<")" )
+    if(ptr==NULL) //Bo wtedy bzdura
+			return 0;
+    assert(s>0); //Jak ma byc 0 to "dispose"!
+    T* tmp=new T[s];
+    memcpy(tmp,ptr,s*sizeof(T));
+    dispose();  //Kasacja starego wektora
+    ptr=tmp;    //Zapamietanie nowego
+    size=s;
+    return s;
+    }
 
 //Dealokacja wektora
 void dispose()
@@ -423,8 +448,15 @@ void dispose()
 //dostep do pojedynczego itemu
 T& operator [] (size_t index) const
 	{
-	assert(ptr!=NULL);
-	assert(index<size);
+#ifndef _NDEBUG
+	if(ptr==NULL || index>=size)
+	{ //Tu postaw breakpoint!
+		cerr<<"Invalid use of wb_dynarray "<<this<<" tabptr:"<<ptr<<"index:"<<index<<" size:"<<size<<endl;
+		assert(ptr!=NULL);
+		assert(index<size);
+	}
+
+#endif
 	return ptr[index];
 	}
 
@@ -581,7 +613,7 @@ void dispose()
 	}
 
 //Rozbudowana alokacja zstepujaca
-int alloc(size_t y,size_t x)
+size_t alloc(size_t y,size_t x)
 	{
 	WBPTRLOG( "wb_dynmatrix::alloc("<<y<<','<<x<<")" )
 	assert(y>0);
@@ -658,15 +690,16 @@ template<class T>
 istream& operator>>(istream&,wb_dynmatrix<T>&);
 #endif
 
-#endif
+} //namespace
+
+/********************************************************************/
+/*			          WBRTM  light version 2009                     */
 /********************************************************************/
 /*           THIS CODE IS DESIGNED & COPYRIGHT  BY:                 */
 /*            W O J C I E C H   B O R K O W S K I                   */
-/* Zaklad Systematyki i Geografii Roslin Uniwersytetu Warszawskiego */
-/*  & Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
-/*        WWW:  http://moderato.iss.uw.edu.pl/~borkowsk             */
-/*        MAIL: borkowsk@iss.uw.edu.pl                              */
+/*    Instytut Studiow Spolecznych Uniwersytetu Warszawskiego       */
+/*        WWW:  http://wwww.iss.uw.edu.pl/borkowski/                */
+/*                                                                  */
 /*                               (Don't change or remove this note) */
 /********************************************************************/
-
-
+#endif
