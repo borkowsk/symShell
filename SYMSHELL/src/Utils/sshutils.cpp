@@ -31,11 +31,11 @@ using namespace std;
 #include "INCLUDE/wbminmax.hpp"
 #include "INCLUDE/wb_ptr.hpp"
 
-#include "symshell.h"
-#include "sshutils.hpp"
+#include "../../symshell.h"
+#include "../../sshutils.hpp"
 
 double distance(double X1,double X2,double Y1,double Y2)
-//Czï¿½sto potrzebne w takich programach
+//Czêsto potrzebne w takich programach
 {
 	double dX=X2-X1;
 	double dY=Y2-Y1;
@@ -114,6 +114,13 @@ if(width<=maxwidth)
 	return 0;//Nie ma miejsca nawet na gwiazdke
 }
 
+void rect_d(int x1,int y1,int x2,int y2)//Ramka domysln¹ linia
+{
+	line_d(x1,y1,x2,y1);//--->
+	line_d(x2,y1,x2,y2);//vvv
+	line_d(x1,y2,x2,y2);//<---
+	line_d(x1,y1,x1,y2);//^^^
+}
 
 void rect(int x1,int y1,int x2,int y2,wb_color frame_c,int width)
 {
@@ -126,10 +133,10 @@ void rect(int x1,int y1,int x2,int y2,wb_color frame_c,int width)
     }
     else
     {
-								assert("NOT TESTED CODE in rect()"==NULL);
+								//assert("NOT TESTED CODE in rect()"==NULL);
     fill_rect(x1,y1,x2,y1+width,frame_c);//--->
     fill_rect(x2,y1,x2+width,y2,frame_c);//vvv
-    fill_rect(x1,y2,x2,y2+width,frame_c);//<---
+    fill_rect(x1,y2,x2+width,y2+width,frame_c);//<---
     fill_rect(x1,y1,x1+width,y2,frame_c);//^^^
     }
 }
@@ -263,7 +270,7 @@ void arrow(int x1,int y1,int x2,int y2,wb_color color,double size,double theta)
 
 	if(poY==0 && poX==0)
 	{
-		//Rzadki bï¿½ï¿½d, ale DOMAIN ERROR!
+		//Rzadki b³¹d, ale DOMAIN ERROR!
 		cross(x1,y1,color,def_arrow_size/2);
 		circle_d(x1+def_arrow_size/sqrt(2.0),y1-def_arrow_size/sqrt(2.0)+1,def_arrow_size);
 		return;
@@ -292,7 +299,7 @@ void arrow_d(int x1,int y1,int x2,int y2,double size,double theta)
 
 	if(poY==0 && poX==0)
 	{
-		//Rzadki bï¿½ï¿½d, ale DOMAIN ERROR!
+		//Rzadki b³¹d, ale DOMAIN ERROR!
 		int cross_width=def_arrow_size/2;
 		line_d(x1-cross_width,y1,x1+cross_width,y1);
 		line_d(x1,y1-cross_width,x1,y1+cross_width);
@@ -325,7 +332,7 @@ void head(int x,int y,int r,wb_color color,double direction)
 	xn=x+0.95*r*cos(direction-M_PI/2);
 	yn=y+0.95*r*sin(direction-M_PI/2);
 	fill_circle(xn,yn,r/4,color);  //Ucho  2
-	//Gï¿½ï¿½wny blok
+	//G³ówny blok
 	fill_circle(x,y,r,color);
 }
 

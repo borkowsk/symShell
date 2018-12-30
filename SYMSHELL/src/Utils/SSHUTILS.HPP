@@ -86,6 +86,7 @@ void hor_arrow(int x,int y1,int y2,wb_color  color,double size=def_arrow_size);
 
 //Rysuje kwadratowa ramke
 void rect(int x1,int y1,int x2,int y2,wb_color frame_c,int width=def_frame_width);
+void rect_d(int x1,int y1,int x2,int y2);//Ramka domysln¹ linia
 
 //Rysuje pionowa skale kolorow
 void ver_scale(int x1,int y1,int width=def_scale_width,wb_color start=0,wb_color end=255);
