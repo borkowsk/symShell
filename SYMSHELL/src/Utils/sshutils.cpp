@@ -48,12 +48,15 @@ double distance(double X1,double X2,double Y1,double Y2)
 
 //Drukuje w obszarze nie wiekszym niz max_width. Zwraca width albo 0
 //wewnetrzny bufor ma nie wiecej niz 1024 znaki
+static wb_pchar bufor;
+
 int print_width(int x,int y,int maxwidth,wb_color col,wb_color bcg,const char* format,...)
 {
 char yust='L';
-const int BUFSIZE=1024;
+const int BUFSIZE=2048;
 int width=0;
-char bufor[BUFSIZE];
+bufor.alloc(BUFSIZE);
+
 if(format[0]=='%' && format[1]=='@')//Zostal podany sposob justowania
 	{
 	yust=toupper(format[2]);
@@ -61,9 +64,10 @@ if(format[0]=='%' && format[1]=='@')//Zostal podany sposob justowania
 	}
 if(strchr(format,'%')!=NULL)//Sa znaki formatujace
 	{
+	bufor
 	va_list list;
 	va_start(list,format);
-	if(vsprintf(bufor,format,list)>=BUFSIZE)
+	if(vsprintf(bufor.get_ptr,format,list)>=BUFSIZE)
 		{
 		errno=ENOMEM;
 		perror("print_width internal bufor exced");
