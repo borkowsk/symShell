@@ -55,14 +55,16 @@ protected:
 PointedType* ptr;
 
 public:
-explicit wb_sptr(PointedType* ini=NULL):ptr(ini){}
-explicit wb_sptr(wb_sptr& nini):ptr(nini.give()){}
+explicit wb_sptr(PointedType* ini=NULL):ptr(ini){} //Przejmuje wskaŸnik
+explicit wb_sptr(wb_sptr& nini):ptr(nini.give()){} //Sztafetuje wskaŸnik z nini
 void dispose(); //Zwalnia zaalokowan¹ pamiêc
 	~wb_sptr() { dispose(); } //DESTRUKTOR - SPECJALNIE NIE-JEST WIRTUALNY
 void finalise(){ dispose(); } //Wywolanie rownowa¿ne destruktorowi
+
 //Testy
 operator int () const; //Do sprawdzania czy nie pusty
 int OK() const; //Jawne sprawdzenie
+
 //Jawne i niejawne przekazania
 wb_sptr& operator = (PointedType* nini); //Przypisanie c-wskaŸnika
 wb_sptr& operator = (wb_sptr& nini);//Sztafetuj¹ce przypisanie
@@ -70,6 +72,7 @@ wb_sptr& operator = (const wb_sptr& nini);//Klonuj¹ce przypisanie
 wb_sptr& transfer_from(wb_sptr& nini); //Jawnie nazwany operator sztafetuj¹cego przypisania
 void take(PointedType* nini); //Wersja jawnego przekazania mu wskaznika
 PointedType*  give();//Zabiera obszar (wskazywany adres) spod zarzadu inteligentnego wskaznika!!!
+
 //Dostêp
 PointedType* get_ptr_val() const;//Dostêp wartoœci do c-wskaŸnika - trzeba uwa¿aæ
 PointedType& operator* () const; //Dostêp do wskazywanej zawartoœci
@@ -81,7 +84,7 @@ class wb_ptr:public wb_sptr<PointedType>
 /////////////////////////////////////////
 {
 public:
-explicit wb_ptr(PointedType* ini=NULL):wb_sptr<PointedType>(ini){}
+explicit wb_ptr(PointedType* ini=NULL):wb_sptr<PointedType>(ini){} //Przejmuje wskaŸnik
 explicit wb_ptr(wb_ptr& nini); //Konstruktor transferuj¹cy u¿ywa :wb_sptr<PointedType>(nini)
 		 //destruktor niepotrzebny bo takijak dziedziczony
 //Przykrycie tych metod które zwracaj¹ wb_sptr<>, ¿eby zwraca³y wb_ptr
@@ -114,15 +117,15 @@ class wb_pchar:public wb_sptr<char>
 public:
 explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 	{ if(s>0 && (ptr=new char[s])!=NULL ) *ptr='\0'; }
-
-~wb_pchar()
-	{ if(ptr) delete [] ptr; ptr=NULL;/*dla sprawdzeñ*/}
-
 //explicit wb_pchar(char* ini): wb_sptr<char>(ini) //Dwuznacznosc semantyczna, wymusza jawne decyzje
 //		{}//Przypisanie danych
 explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
 explicit wb_pchar(const wb_pchar& nini); //Konstruktor klonuj¹cy
 explicit wb_pchar(wb_pchar& nini);//Konstruktor sztafetuj¹cy
+~wb_pchar() { dispose();}         //Destruktor
+void finalise() { dispose(); } //Wywolanie rownowa¿ne destruktorowi
+void dispose() //Zwalnia zaalokowan¹ pamiêc. Jak u¿yje dziedziczonego to siê pewnie nic nie stanie, ale...
+	{ if(ptr) delete [] ptr; ptr=NULL;/*dla sprawdzeñ*/}
 
 wb_pchar& operator = (const char* nini); //Operator klonuj¹cego przypisania
 wb_pchar& operator = (wb_pchar& nini); //Operator transferuj¹cego przypisania
