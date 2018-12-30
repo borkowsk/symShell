@@ -67,6 +67,19 @@ if(Flags==0)/* Ma byc domyslnie */
 return AppendMenu(hMenu,Flags,Message,ItemName);
 }
 
+int ssh_menu_remove_item(          /* Usuwa item z menu */
+					ssh_menu_handle hMenu,
+					unsigned    ItemCommandOrPosition,
+					unsigned    asPosition )
+{
+UINT Flags=0;
+if(asPosition) Flags|=MF_BYPOSITION;
+	else	   Flags|=MF_BYCOMMAND;
+return  RemoveMenu(hMenu,ItemCommandOrPosition,Flags)!=0xffffffff;
+}
+
+
+
 int ssh_menu_mark_item(
 					ssh_menu_handle hMenu,
 					unsigned    Check,
