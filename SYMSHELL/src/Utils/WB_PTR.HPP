@@ -118,55 +118,38 @@ explicit wb_pchar(size_t s=0):wb_sptr<char>(NULL)
 ~wb_pchar()
 	{ if(ptr) delete [] ptr; ptr=NULL;/*dla sprawdzeñ*/}
 
-explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
-
-//wb_pchar(char* ini): wb_sptr<char>(ini) //Dwuznacznosc semantyczna, wymusza jawne decyzje
+//explicit wb_pchar(char* ini): wb_sptr<char>(ini) //Dwuznacznosc semantyczna, wymusza jawne decyzje
 //		{}//Przypisanie danych
-
-wb_pchar(const wb_pchar& nini);//Konstruktor klonuj¹cy
-
-wb_pchar(wb_pchar& nini);//Konstruktor sztafetuj¹cy
+explicit wb_pchar(const char* ini);  //Kopiuje tylko dane
+explicit wb_pchar(const wb_pchar& nini); //Konstruktor klonuj¹cy
+explicit wb_pchar(wb_pchar& nini);//Konstruktor sztafetuj¹cy
 
 wb_pchar& operator = (const char* nini); //Operator klonuj¹cego przypisania
-
 wb_pchar& operator = (wb_pchar& nini); //Operator transferuj¹cego przypisania
-
 wb_pchar& operator = (const wb_pchar& nini); //Operator klonuj¹cego przypisania
 
 void alloc(size_t s);// Alokacja do nowego rozmiaru, utrata starej zawartoœci!
-
-char& operator [] (size_t index) const; //Pozwala (?) na zmiana zawartosci ale nie wskaznika
-
 size_t get_size() const; //D³ugoœæ ³añcucha w wersji C
-
 const char* get() const; //Skrócone get_ptr_val();
 						//Tu nie sprawdzamy czy NULL - niech sie martwi wolajacy
 
+char& operator [] (size_t index) const; //Pozwala (?) na zmiana zawartosci ale nie wskaznika
+
 //A la C-owe stringi - to co mo¿na bezboleœnie
 wb_pchar& prn(const char* format,...); //Wyprowadza na zawartosc. Nie sprawdza rozmiaru!!!
-
 wb_pchar& add(const char* format,...); //Dopisuje do zawartosci. Nie sprawdza rozmiaru!!!
-
-friend size_t strlen(const wb_pchar& what);//Atrapa c-owego strlen
-
-friend size_t strcmp(const wb_pchar& f,const wb_pchar& s);//Atrapa c-owego
-
+friend size_t strlen(const wb_pchar& what); //Atrapa c-owego strlen
+friend size_t strcmp(const wb_pchar& f,const wb_pchar& s); //Atrapa c-owego
 friend size_t strcmp(const char* f,const wb_pchar& s); //Wersja mieszana
-
 friend size_t strcmp(const wb_pchar& f,const char* s); //j.w.
-
-friend const char* strchr(const wb_pchar& what,const char c);//Atrapa c-owego
-
-friend const char* strstr(const wb_pchar& what,const wb_pchar& s);//Atrapa c-owego
-
-friend const char* strstr(const wb_pchar& what,const char* s);//Atrapa c-owego
+friend const char* strchr(const wb_pchar& what,const char c); //Atrapa c-owego
+friend const char* strstr(const wb_pchar& what,const wb_pchar& s); //Atrapa c-owego
+friend const char* strstr(const wb_pchar& what,const char* s); //Atrapa c-owego
 
 //Zamienia wszystkie lancuchy forrep zawarte w obiekcie wb_pchar na lancuchy whatins - bufor jest sztafetowany!!!
 friend bool replace(wb_pchar& bufor,const char* forrep,const char* whatins,bool fullwords,unsigned startpos=0);//case sensitive bo brak funkcji w rodzaju stristr
-
 //Wstawia lancuch do bufora na okreslonej pozycji - bufor jest sztafetowany(?) TODO!!!
 friend bool insert(wb_pchar& bufor,unsigned pos,const char* whatins);
-
 //Implementacja zapisu na strumien ze sprawdzaniem czy trzeba w \"
 static void write(ostream& s,const char* p,char enclos='\"');
 };
