@@ -2,8 +2,7 @@
 /**********************************/
 /* for X11 SYMSHELL implementation */
 #include "icon.h"
-
-int WB_icon_bitmap_width=100;
+int basic_line_with=1;int WB_icon_bitmap_width=100;
 int WB_icon_bitmap_height=120;
 
 char WB_icon_bitmap_bits[] = {
