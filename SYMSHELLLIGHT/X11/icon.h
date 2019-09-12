@@ -1,4 +1,4 @@
-/* icon.h - header                  */
+/* icon.h -                         */
 /************************************/
 /* ONLY FOR symshx11.c and releated */
 
@@ -10,3 +10,4 @@ extern int WB_icon_bitmap_height;
 extern char WB_icon_bitmap_bits[];
 
 #endif
+
