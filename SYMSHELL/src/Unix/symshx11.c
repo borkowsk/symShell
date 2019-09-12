@@ -2,45 +2,49 @@
 /* Wyswietla pod X-windows za pomoca biblioteki X11 */
 /* symshx11.c */
 
-/* WERSJA Z BLEDEM NA EXPOSE */
+/* WERSJA Z BLEDEM NA EXPOSE CZY NADAL? TODO */
 
-//#include "platform.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <signal.h>
 #include <assert.h>
 #include <math.h>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327
+#endif
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 
-#include "symshell.h"
-#include "icon.h"
+#include "../symshell.h"
+#include "../icon.h"
 
-//#define CREATE_FULL /* Use extended function for Window creation */
-#define BITMAPDEPTH 1
-#define TOO_SMALL 0
-#define BIG_ENOUGH 1
+#define CREATE_FULL  1 /* Use extended function for Window creation */
+//#define BITMAPDEPTH     1
+#define TOO_SMALL       0
+#define BIG_ENOUGH      1
+#define FALSE          (   0  )
+#define NODATA         ( '\0' )
 
-#define FALSE 0
-#define NODATA '\0'
+extern int basic_line_with;/* Głowny wspólczynnik grubości lini zalezny od powiekszenia ekranu */ 
+extern int WB_error_enter_before_clean;/* changing behaviour of close_plot() */
 
-/* For close_plot() */
-static int opened=0; /* Dla close plot. Zerowane tez gdy "broken-pipe" */
+// <editor-fold defaultstate="collapsed" desc="COŚ TU NIE GRA">
+static int opened = 0; /* For close plot. Will be set to 0 also when "broken-pipe" */
+// </editor-fold>
 static char trace=1; /* Domyslny poziom logowania zdarzeń X11 */
-extern int WB_error_enter_before_clean;
-
 
  /* progname is the string by which this program was invoked; this
   * is global because it is needed in most application functions */
  static char *progname="WB SYMULATION NAME NOT SET";
- static char *window_name = "WB X11 window for symulation shell";
+ static char *window_name = "WB X11 window for simulation shell";
  static char *icon_name = "WB-sym-shell";
 
  static size_t largc=0;		/* Do zapamietania przekazanych przez funkcje */
- static char**  largv=NULL;
+ static char** largv=NULL;
 
  static int   is_buffered=0;       /* Czy okno jest buforowane pixmapa */
  static int     animate=0;	  /* Czy odswierznaie tylko gdy flush czy na biezaco */
@@ -50,26 +54,31 @@ extern int WB_error_enter_before_clean;
  static unsigned int org_width,org_height;/* Starting Window size */
  static int ini_a,ini_b,ini_ca,ini_cb;	 /* Konieczne do dzialania
 						screen_width() i screen_heiht() i zmiany rozmiaru*/
-
-
+ 
 /* These are used as arguments to nearly every Xlib routine, so it
   * saves routine arguments to declare them global; if there were
   * additional source files, they would be declared extern there */
- static char *display_name = NULL; /* Nazwa wyswietlacza - do odczytania */
+ static char    *display_name = NULL; /* Nazwa wyswietlacza - do odczytania */
  static Display *display=0;
- static int screen_num=0;
- static Window win=0;
- static GC gc=0;  		/* Kontekst graficzny */
+ static int     screen_num=0;
+ static Window  win=0;
+ static GC      gc=0;  		/* Kontekst graficzny */
 
  static unsigned int width,height;      /* Window size */
  static int x, y;                       /* Window position */
- static unsigned int default_deph = 8;  /* Window deph. 8=>256 colors */
+#ifdef CREATE_FULL
+ static const unsigned int default_deph = 32; /* Window deph. 8=>256 colors 32=>true colors*/
+#else
+ static unsigned int default_deph = 16; /* Window deph. 8=>256 colors 32=>true colors*/
+#endif
  static unsigned int border_width = 4;  /* Four pixels */
  static unsigned int display_width, display_height;
  static unsigned int icon_width, icon_height;
+ 
  static Pixmap icon_pixmap;
  static unsigned short alloc_cont=0; /* Sygnalizuje ze pixmapa zaostala zaalokowana */
  static Pixmap cont_pixmap=0;
+ 
  static XSizeHints *size_hints;
  static XIconSize *size_list;
  static XWMHints *wm_hints;
@@ -85,7 +94,6 @@ extern int WB_error_enter_before_clean;
  static unsigned ori_font_height = 16;
  static unsigned font_width = 0;
  static unsigned font_height = 0;
-
 
  static int window_size = TOO_SMALL; /* BIG_ENOUGH or TOO_SMALL to display contents */
 
@@ -128,6 +136,13 @@ fprintf(stderr,"%s GOT A SIGNALL #%d\n",icon_name,num);
 exit(num);
 }
 
+//static int basic_line_with=1; //Ale nie jest widoczne w funkcja w GCC - JAKIŚ BUG?
+static int User_line_width=1;   /* Multiplikator grubości lini nadany przez użytkownika - 0 znosi skalowanie grubości */
+static int User_line_style=SSH_LINE_SOLID; //Styl lini
+static int StyleX11[3]={LineSolid, LineOnOffDash,LineDoubleDash};
+
+static void CloseAll();
+
 int mouse_activity(int yes)
 /* Ustala czy mysz ma byc obslugiwana.
 W X11 zawsze jest, ale mozna ja ignorowac */
@@ -165,6 +180,8 @@ return animate;
 }
 
 static void SetScale(XColor RGBarray[])
+//Definiuje takie kolory jakich byśmy chcieli - niekoniecznie musi się 
+//udać wszystkie zaalokować gdy nie true-color!
 {
 unsigned k;
 XColor RGB;
@@ -211,7 +228,7 @@ if(UseGrayScale)
     }
   }
 
-//Kolor 2555 na pewno biały!
+//Kolor 255 na pewno biały!
 RGBarray[255].red=0xffff;
 RGBarray[255].green=0xffff;
 RGBarray[255].blue=0xffff;
@@ -220,75 +237,54 @@ if(trace)
 	fprintf(stderr,"%s\n","SetScale completed");
 }
 
+//TWORZENIE KOLORÓW NA SKRÓTY - MA SZANSE DZIAŁĄĆ TYLKO NA 32 bitowym display'u
+/* 
+int buildColorD3(double red, double green, double blue)
+{
+    return(
+        ((int)(red*256)%256)<<16+
+        ((int)(green*256)%256)<<8+
+        ((int)(blue*256)%256));
+}
+*/
+
+int buildColor(unsigned char red, unsigned char green, unsigned char blue)
+{
+    return ( (int)(red) << 16) +
+           ( (int)(green)<< 8) +
+           ( (int)(blue) ) ;
+}
+
+int buildColorAlpha(unsigned char red, unsigned char green, unsigned char blue,unsigned char alpha) //????
+{ /* Czy to może działać? */
+    return ( (int)(alpha) << 24) +
+           ( (int)(red) << 16) +
+           ( (int)(green)<< 8) +
+           ( (int)(blue) ) ;
+}
+
+
 void set_rgb(ssh_color color,int r,int g,int b)
 /* Zmienia definicja koloru. Indeksy 0..255 */
-{
+{  //TODO dla 32 bit!
 XColor pom;
 unsigned long pixels[1];
+
 pom.red=r*256;
 pom.blue=b*256;
 pom.green=g*256;
-pixels[0]/*=pom.pixel*/=Scale[color];//???
+
+pixels[0]/*=pom.pixel ???*/=Scale[color];//??? TODO O co biega?
 pom.pixel=0;
+
 if(XAllocColor(display,colormap,&pom)!=0)
     {
-    Scale[color]=pom.pixel;
+    Scale[color]=pom.pixel;//Czyta co wyszło z tej definicji koloru
     /*Niepewna metoda,lub wrecz zla */
     XFreeColors(display,colormap,pixels, 1,0);
     }
 }
 
-static void CloseAll()
-{
- if(display==0)
-	{
-	if(trace) fprintf(stderr,"Traing to free resources of NULL display!\n");
-	return;
-	}
-
- if(font_info){
- 	XUnloadFont(display, font_info->fid);
-	font_info=NULL; }
-
- if(gc!=0){
- 	XFreeGC(display, gc);
-	gc=0; }
-
-#ifndef __MSDOS__
-if(colormap!=0)
-	{
- 	XUninstallColormap(display,colormap);
- 	XFreeColormap(display,colormap);
-	colormap=0;
-	}
-#endif
-
-if(alloc_cont!=0)
- 	{
-	XFreePixmap(display,cont_pixmap);
-	if(trace)
-  		fprintf(stderr,"%s %x\n","FREE PIXMAP",cont_pixmap);
-	cont_pixmap=0;
-	}
-
-if(win!=0)
-    {
-    if(trace)
-	   fprintf(stderr, "%s %x ","DESTROY WINDOW",win);
-
-    XDestroyWindow(display,win);
-    if(trace)
-	   fprintf(stderr, "-OK win: %x\n",win);
-    win=0;
-    }
-
-if(trace)
-	   fprintf(stderr,"CLOSE DISPLAY");
-XCloseDisplay(display);
-if(trace)
-	   fprintf(stderr,"-OK\n");
-display=0;
-}
 
 static void ResizeBuffer(unsigned int nwidth,unsigned int nheight)
 /* Alokuje pixmape na zawatosc okna */
@@ -375,9 +371,9 @@ REPLAY:
     {
        (void) fprintf( stderr, "%s: Cannot open %s font\n",
              progname,fontname);
-       if(fontname[0]!="*")
+       if(fontname[0]!='*')
         {
-          fontname[0]="*";fontname[1]=0;
+          fontname[0]='*';fontname[1]=0;
           goto REPLAY;
         }
         else
@@ -437,6 +433,7 @@ unsigned int area_width, area_height;
 
 static void Read_XInput()
 {
+extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane jako static powyżej */
 static int buffer_empty=1;
 
 XEvent report;  /* Miejsce na odczytywane zdazenia */
@@ -560,22 +557,28 @@ if(pipe_break)	/* Musi zwrocic EOF */
           else
 	     {
              window_size = BIG_ENOUGH;
-	     /*mulx=width/org_width; STARA WERSJA
-	     muly=height/org_height;*/
-
-	     mulx=(width-ini_ca*font_width)/ini_a;
+	     
+	     mulx=(width-ini_ca*font_width)/ini_a; /*STARA WERSJA: mulx=width/org_width; muly=height/org_height;*/
 	     muly=(height-ini_cb*font_height)/ini_b;
-
-	     load_font(&font_info,&gc); /* New font - size changed */
+             basic_line_width=(mulx>muly?muly:mulx);
+             
+	     XSetLineAttributes(display, gc, //Size of screen have impact on this!
+                        (User_line_width>0?basic_line_width*User_line_width:1),
+                        StyleX11[User_line_style],  
+                        CapRound, JoinRound);
+             
+             load_font(&font_info,&gc); /* New font - size changed */
 
 	     if(is_buffered)
 		 {
-	        ResizeBuffer(width,height);
+	          ResizeBuffer(width,height);
 			buffer_empty=1;
 		 }
 
 	     if(trace)
-	     	fprintf(stderr,"->%dx%d scale: x=%d:1 y=%d:1 \n",width,height,mulx,muly);
+	     	fprintf(stderr,"->%dx%d scale: x=%d:1 y=%d:1 ln.widt:%d\n",width,height,mulx,muly,basic_line_width);
+             
+             
 	     }
           break;
 
@@ -621,36 +624,45 @@ if(pipe_break)	/* Musi zwrocic EOF */
 
 }
 
- static void getGC(win, gc, font_info)
- Window win;
- GC *gc;
- XFontStruct *font_info;
+ static void getGC(Window win,GC * gc,XFontStruct * font_info)
  {
+    extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane jako static powyżej */
     XColor pom,Array[512];
     unsigned long valuemask = 0,i; /* Ignore XGCvalues and
                           * use defaults */
     XGCValues values;
-    unsigned int line_width = 6;
+    
     int line_style = LineOnOffDash;
     int cap_style = CapRound;
     int join_style = JoinRound;
+    basic_line_width = 2;
+    
  //   int dash_offset = 0; //XSetDashes - not used
  //   static char dash_list[] = {12, 24};
  //   int list_length = 2;
 
     /* Create default Graphics Context */
     *gc = XCreateGC(display, win, valuemask, &values);
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"Graphix Context created\n");
 
     /* Specify black foreground since default window background
      * is white and default foreground is undefined */
     Black=BlackPixel(display,screen_num);
     White=WhitePixel(display,screen_num);
     XSetForeground(display, *gc, Black);
-
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XSetForeground OK\n");
+    
     /* Set line attributes */
-    XSetLineAttributes(display, *gc, line_width, line_style,
+    XSetLineAttributes(display, *gc, basic_line_width, line_style,
           cap_style, join_style);
-
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XSetLineAttributes OK\n");
+    
     /* Set dashes */
     /* ???
 	XSetDashes(display, *gc, dash_offset, dash_list, list_length);
@@ -659,38 +671,72 @@ if(pipe_break)	/* Musi zwrocic EOF */
     /* Set Color scale */
     Scale[0]=BlackPixel(display,screen_num);
     Scale[255]=WhitePixel(display,screen_num);
-
-#ifdef __MSDOS__
-    colormap=XDefaultColormap(display,screen_num); /* W emulacji nie ma map */
-#else
+    
+#ifndef  CREATE_FULL
+//#ifdef __MSDOS__
+//    colormap=XDefaultColormap(display,screen_num); /* W STAREJ emulacji nie było map */
+//#else
     colormap=XCreateColormap(display,win,DefaultVisual(display,screen_num),AllocNone);
-#endif
-
+//#endif
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XCreateColormap ||  OK\n");
+    
     XSetWindowColormap(display,win,colormap);
-
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XSetLineAttributes OK\n");
+        
     pom.red=pom.green=pom.blue=0;
-    XAllocColor(display,colormap,&pom);
     Black=pom.pixel;
     Scale[0]=pom.pixel;
-    XSetForeground(display, *gc, Black);
-   /*fprintf(stderr,"BLACK %u\n",Black);*/
-
-    pom.red=pom.green=pom.blue=0xffff;
+    
     XAllocColor(display,colormap,&pom);
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XAllocColor for Black OK\n");
+       
+    pom.red=pom.green=pom.blue=0xffff;   
     White=pom.pixel;
     Scale[255]=pom.pixel;
+    
+    XAllocColor(display,colormap,&pom);
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XAllocColor for White OK\n");
+    
+    //Ponowne ustalanie pisaka i tła - może potrzebne jak się zmieniła paleta TODO Check!
+    XSetForeground(display, *gc, Black); 
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XSetForeground OK\n");
+
     XSetBackground(display, *gc, White);
-    /*fprintf(stderr,"WHITE %u\n",White);*/
-
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"XSetBackground as White OK\n");
+#endif       
+  
     SetScale(Array);
+    if(trace)
+            fprintf(stderr,"RGB scale ready to use\n");
 
+#ifdef  CREATE_FULL
     for(i=0;i<512;i++)
 	{
-	    int ret;//Wartosc zwracan przez funkcje XAllocColor
+	int ret;//Wartosc zwracana przez funkcje XAllocColor
+        pom=Array[i];
+        Scale[i] = buildColor(pom.red & 0xff,pom.green & 0xff,pom.blue & 0xff);
+        }
+#else
+    for(i=0;i<512;i++)
+	{
+	int ret;//Wartosc zwracana przez funkcje XAllocColor
         pom=Array[i];
         pom.red*=256;
-        pom.blue*=256;
         pom.green*=256;
+        pom.blue*=256;
+        
 
         if((ret=XAllocColor(display,colormap,&pom))!=1)
         {
@@ -700,31 +746,36 @@ if(pipe_break)	/* Musi zwrocic EOF */
            break;
         }
         //fprintf(stderr," %d ",ret);
-        Scale[i]=pom.pixel;
+        Scale[i]=pom.pixel; //Tu się zmienia kolor w skali, jak tryb indeksowany
 	}
-
-	NumberOfColors=i;//Tyle kolorow udalo sie alokowac
+    
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"Alloc colors for values set by SetScale(Array); OK\n");
+    NumberOfColors=i;//Tyle kolorow udalo sie alokowac
 
     XInstallColormap(display,colormap);
+    XSync(display, True);
     if(trace)
         fprintf(stderr,"\nColormap of %d colors allocated\n",NumberOfColors);
+   #endif
  }
 
 int screen_height()
 {
-return ini_b+(ini_cb*font_height)/muly;/* Window size */
+        return ini_b+(ini_cb*font_height)/muly;/* Window size */
 }
 
 int  screen_width()
 {
-return ini_a+(ini_ca*font_width)/mulx;/* Window size */
+        return ini_a+(ini_ca*font_width)/mulx;/* Window size */
 }
 
 int  char_height(char znak)
 {
-int pom=(font_height+muly)/muly;
-/*if(pom<1)pom=1;*/
-return pom;
+        int pom=(font_height+muly)/muly;
+        /*if(pom<1)pom=1;*/
+        return pom;
 }
 
 int  char_width(char znak)
@@ -838,9 +889,18 @@ return pom;
 /* Used for redraw & in print */
 
 static char straznik1=0x77;
-static char bufor[1024];
+static char bufor[2048];
 static char straznik2=0x77;
 static int ox,oy;
+static int _transparently=0;
+
+int		print_transparently(int yes)
+/* Wlacza drukowanie tekstu bez zamazywania t�a. Zwraca stan poprzedni */
+{
+    int ret=_transparently;
+    _transparently=yes;
+    return ret;
+}
 
 void printbw(int x,int y,const char* format,...)
 /* ---//--- wyprowadzenie tekstu na ekran */
@@ -858,7 +918,7 @@ unsigned font_height=0;
 
    if(straznik1!=0x77 || straznik2!=0x77)
 		{
-		fprintf(stderr,"symshell.print(...) - line exced 1024b!");
+		fprintf(stderr,"symshell.print(...) - line exced 2048b!");
 		abort();
 		}
 
@@ -878,9 +938,12 @@ unsigned font_height=0;
     y*=muly; /* if window is bigger */
 
     ox=x;oy=y;
-    CurrForeground=-1;
+    CurrForeground=-1;                           //TODO CHECK IT!
     XSetForeground(display,gc,Scale[0]);
-    XSetBackground(display,gc,Scale[bacground]);
+    if(_transparently)
+        XSetBackground(display,gc,buildColorAlpha(0,0,0,0));
+    else
+        XSetBackground(display,gc,Scale[bacground]);//Normalnie    
 
 if(!animate)
     XDrawImageString(display, win, gc, x , y+font_height ,  bufor, len);
@@ -906,7 +969,7 @@ unsigned font_height=0;
 
    if(straznik1!=0x77 || straznik2!=0x77)
 		{
-		fprintf(stderr,"symshell.print(...) - line exced 1024b!");
+		fprintf(stderr,"symshell.print(...) - line exced 2048b!");
 		abort();
 		}
 
@@ -926,30 +989,17 @@ unsigned font_height=0;
     y*=muly; /* if window is bigger */
 
     ox=x;oy=y;
-    CurrForeground=-1;
+    CurrForeground=-1;                           //TODO CHECK IT!
     XSetForeground(display,gc,Scale[fore]);
-    XSetBackground(display,gc,Scale[back]);
+    if(_transparently)
+        XSetBackground(display,gc,buildColorAlpha(0,0,0,0));//32bit deph?
+    else
+        XSetBackground(display,gc,Scale[back]);//Normalnie
+    
 if(!animate)
     XDrawImageString(display, win, gc, x , y+font_height ,  bufor, len);
 if(is_buffered)
     XDrawImageString(display, cont_pixmap, gc, x , y+font_height ,  bufor, len);
-}
-
-/*
-int buildColorD3(double red, double green, double blue)
-{
-    return(
-        ((int)(red*256)%256)<<16+
-        ((int)(green*256)%256)<<8+
-        ((int)(blue*256)%256));
-}
-*/
-
-int buildColor(unsigned char red, unsigned char green, unsigned char blue)
-{
-    return ( (int)(red) << 16) +
-           ( (int)(green)<< 8) +
-           ( (int)(blue) ) ;
 }
 
 void plot_rgb(int x,int y,
@@ -1023,6 +1073,205 @@ if(is_buffered)
 
 }
 
+void fill_rect_d(int x1,int y1,int x2,int y2)
+{/* Wyswietla prostokat w kolorach domyslnych - czyli taki pędzel jaki został */
+   //  assert("Not implemented"==NULL); 
+x1*=mulx; /* Multiplicaton of coordinates */
+y1*=muly; /* if window is bigger */
+x2*=mulx; /* Multiplicaton of 2' coordinates */
+y2*=muly; /* if window is bigger */
+if(!animate)
+   	XFillRectangle(display, win, gc, x1, y1, x2-x1, y2-y1 );
+if(is_buffered)
+   	XFillRectangle(display, cont_pixmap, gc, x1, y1, x2-x1, y2-y1 );
+}
+
+int	put_style(int  style)
+/* Ustala stosunek nowego rysowania do starej zawartosci ekranu: SSH_SOLID_PUT,SSH_XOR_PUT */
+{
+    return SSH_SOLID_PUT; //TODO - XOR PUT - NIE ZAIMPLEMENTOWANE, O ILE MOŻLIWE
+}
+
+
+int	line_width(int width)
+/* Ustala szerokosc lini - moze byc kosztowne w wykonaniu. Zwraca stan poprzedni */
+{
+    extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane powyżej */
+    int ret=User_line_width;
+    if(width>=0)
+    {
+        User_line_width=width;
+        if(trace)
+		{
+		fprintf(stderr,"Changing line defaults settings for W:%d S:%d \n",
+                        (User_line_width > 0 ? basic_line_width * User_line_width : 1 ),
+                        StyleX11[User_line_style]);
+		}
+	XSetLineAttributes(display, gc,
+                (User_line_width>0? basic_line_width * User_line_width:1),
+		StyleX11[User_line_style],  
+                CapRound, JoinRound);
+        
+    }
+    return ret;
+}
+
+int     get_line_width(void)
+/* Aktualna grubosc linii */
+{
+    return User_line_width;
+}
+
+int     line_style(int style)
+/* Ustala styl rysowania lini: SSH_LINE_SOLID, SSH_LINE_DOTTED, SSH_LINE_DASHED */
+{  //SSH_LINE_SOLID  1   SSH_LINE_DOTTED 2  SSH_LINE_DASHED 3
+    extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane powyżej */
+    int ret=User_line_style;
+    if(SSH_LINE_SOLID<=style && style<=SSH_LINE_DASHED)
+    {
+        User_line_style=style;
+        if(trace)
+		{
+		fprintf(stderr,"Changing line defaults settings for W:%d S:%d \n",
+                        (User_line_width >0? basic_line_width * User_line_width :1),StyleX11[User_line_style]);
+		}
+	XSetLineAttributes(display, gc,
+                (User_line_width>0? basic_line_width * User_line_width :1),
+		StyleX11[User_line_style],  
+                CapRound, JoinRound);
+    }
+    return ret;
+}
+
+void	set_pen_rgb(int r,int g,int b,int size,int style)
+{/* Ustala aktualny kolor linii za pomoca skladowych RGB */
+    //assert("Not implemented"==NULL);
+      extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane powyżej */
+      CurrForeground=-1;
+      XSetForeground(display,gc,buildColor(r,g,b));
+       
+      if( basic_line_width!=(mulx>muly?muly:mulx) 
+      || style!=User_line_style
+      || size!=User_line_width    )
+	{   
+        User_line_style=style;
+        User_line_width=size;   
+	basic_line_width=(mulx>muly?muly:mulx);
+        
+	if(trace)
+		{
+		fprintf(stderr,"Changing line defaults settings for W:%d S:%d \n",
+                        (User_line_width>0?basic_line_width*User_line_width:1),StyleX11[User_line_style]);
+		}
+	XSetLineAttributes(display, gc,
+                (User_line_width>0?basic_line_width*User_line_width:1),
+		StyleX11[User_line_style],  
+                CapRound, JoinRound);
+	}
+}
+
+void	set_pen(ssh_color c,int size,int style)
+{/* Ustala aktualny kolor linii za pomoca typu ssh_color */
+    //assert("Not implemented"==NULL);
+    extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane powyżej */
+    
+   if(c!=CurrForeground)
+   {
+   CurrForeground=c;
+   XSetForeground(display,gc,Scale[c]);
+   }
+  
+   if( basic_line_width!=(mulx>muly?muly:mulx) 
+       || style!=User_line_style
+       || size!=User_line_width    )
+	{   
+        User_line_style=style;
+        User_line_width=size;   
+	basic_line_width=(mulx>muly?muly:mulx);
+        
+	if(trace)
+		{
+		fprintf(stderr,"Changing line defaults settings for W:%d S:%d \n",
+                        (User_line_width>0?basic_line_width*User_line_width:1),StyleX11[User_line_style]);
+		}
+	XSetLineAttributes(display, gc,
+                (User_line_width>0?basic_line_width*User_line_width:1),
+		StyleX11[User_line_style],  
+                CapRound, JoinRound);
+	}
+}
+
+//Zdaje się ze X11 nie ma koncepcji osobnego pędzla i pisaka, więc pędzle uproszczone
+void	set_brush_rgb(int r,int g,int b)
+{/* Ustala aktualny kolor wypelnien za pomoca skladowych RGB */
+    //assert("Not implemented"==NULL);
+    CurrForeground=-1;
+    XSetForeground(display,gc,buildColor(r,g,b));
+}
+
+void	set_brush(ssh_color c)			
+{/* Ustala aktualny kolor wypelnien za pomoca typu ssh_color */
+   // assert("Not implemented"==NULL);
+   if(c!=CurrForeground)
+   {
+   CurrForeground=c;
+   XSetForeground(display,gc,Scale[c]);
+   }   
+}
+
+void line(int x1,int y1,int x2,int y2,ssh_color c)
+/* wyswietlenie lini */
+{
+    extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane powyżej */
+    
+x1*=mulx;x2*=mulx; /* Multiplicaton of coordinates */
+y1*=muly;y2*=muly;  /* if window is bigger */
+if(c!=CurrForeground)
+   {
+   CurrForeground=c;
+   XSetForeground(display,gc,Scale[c]);
+   }
+if( basic_line_width!=(mulx>muly?muly:mulx) )
+	{
+	basic_line_width=(mulx>muly?muly:mulx);
+	if(trace)
+		{
+		fprintf(stderr,"Set line width to %d\n",basic_line_width);
+		}
+	XSetLineAttributes(display, gc,basic_line_width,
+		 LineSolid,  CapRound, JoinRound);
+	}
+if(!animate)
+	XDrawLine(display,win, gc, x1, y1, x2, y2);
+if(is_buffered)
+	XDrawLine(display,cont_pixmap, gc, x1, y1, x2, y2);
+}
+
+void line_d(int x1,int y1,int x2,int y2)
+{/* Wyswietlenie lini w kolorze domyslnym - czyli wcześniej ustawionym "pędzlem"*/
+    // assert("Not implemented"==NULL); 
+    extern int basic_line_width;/* Z jakiegoś powodu GCC nie widzi że to jest zadeklarowane powyżej */
+    
+x1*=mulx;x2*=mulx; /* Multiplicaton of coordinates */
+y1*=muly;y2*=muly;  /* if window is bigger */
+
+if( basic_line_width!=(mulx>muly?muly:mulx) )
+	{
+	basic_line_width=(mulx>muly?muly:mulx);
+	if(trace)
+		{
+		fprintf(stderr,"Set line width to %d\n",basic_line_width);
+		}
+	XSetLineAttributes(display, gc,basic_line_width,
+		 LineSolid,  CapRound, JoinRound);
+	}
+
+if(!animate)
+	XDrawLine(display,win, gc, x1, y1, x2, y2);
+if(is_buffered)
+	XDrawLine(display,cont_pixmap, gc, x1, y1, x2, y2);
+}
+
 void fill_poly(int vx,int vy,
 					const ssh_point points[],int number,
 					ssh_color c)
@@ -1069,38 +1318,12 @@ if(number>10) /*Byl duzy*/
 	free(LocalPoints);
 }
 
-void line(int x1,int y1,int x2,int y2,ssh_color c)
-/* wyswietlenie lini */
-{
-static unsigned line_width=0;
-x1*=mulx;x2*=mulx; /* Multiplicaton of coordinates */
-y1*=muly;y2*=muly;  /* if window is bigger */
-if(c!=CurrForeground)
-   {
-   CurrForeground=c;
-   XSetForeground(display,gc,Scale[c]);
-   }
-if( line_width!=(mulx>muly?muly:mulx) )
-	{
-	line_width=(mulx>muly?muly:mulx);
-	if(trace)
-		{
-		fprintf(stderr,"Set line width to %d\n",line_width);
-		}
-	XSetLineAttributes(display, gc,line_width,
-		 LineSolid,  CapRound, JoinRound);
-	}
-if(!animate)
-	XDrawLine(display,win, gc, x1, y1, x2, y2);
-if(is_buffered)
-	XDrawLine(display,cont_pixmap, gc, x1, y1, x2, y2);
-}
-
 void clear_screen()
 /* Czysci ekran przed zmiana zawartosci */
 {
-XSetForeground(display, gc, Scale[bacground] );
 CurrForeground=-1;
+XSetForeground(display, gc, Scale[bacground] );
+
 /* Clear screen and bitmap */
 if(!animate)
 	{
@@ -1118,7 +1341,7 @@ void circle(int x,int y,int r,ssh_color c)
 /* Wyswietlenie okregu w kolorze c */
 {
 int angle2=360*64,r1,r2;
-x*=mulx;y*=muly;   /* Multiplicaton of coordinates */
+x*=mulx;y*=muly;   /* Multiplication of coordinates */
 r1=r*mulx;r2=r*muly;  /* if window is bigger */
 if(c!=CurrForeground)
    {
@@ -1131,23 +1354,50 @@ if(is_buffered)
 	XDrawArc(display, cont_pixmap , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
 }
 
+void circle_d(int x,int y,int r)
+/* Wyswietlenie okregu w kolorze domyslnym */
+{
+int angle2=360*64,r1,r2;
+x*=mulx;y*=muly;   /* Multiplication of coordinates */
+r1=r*mulx;r2=r*muly;  /* if window is bigger */
+
+if(!animate)
+	XDrawArc(display, win , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
+if(is_buffered)
+	XDrawArc(display, cont_pixmap , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
+}
+
 void fill_circle(int x,int y,int r,ssh_color c)
 /* KOlo w kolorze c */
 {
 int angle2=360*64,r1,r2;
-x*=mulx;y*=muly;   /* Multiplicaton of coordinates */
+x*=mulx;y*=muly;   /* Multiplication of coordinates */
 r1=r*mulx;r2=r*muly;  /* if window is bigger */
+
 if(c!=CurrForeground)
    {
    CurrForeground=c;
    XSetForeground(display,gc,Scale[c]);
    }
+
 if(!animate)
 	XFillArc(display, win , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
 if(is_buffered)
 	XFillArc(display, cont_pixmap , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
 }
 
+void fill_circle_d(int x,int y,int r)
+/* KOlo w kolorze domyślnym */
+{
+int angle2=360*64,r1,r2;
+x*=mulx;y*=muly;   /* Multiplication of coordinates */
+r1=r*mulx;r2=r*muly;  /* if window is bigger */
+
+if(!animate)
+	XFillArc(display, win , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
+if(is_buffered)
+	XFillArc(display, cont_pixmap , gc, x-r1, y-r2, r1*2, r2*2, 0, angle2);
+}
 
 int repaint_area(int* x,int* y,int* width,int* height)
 {
@@ -1222,12 +1472,20 @@ if(opened)
     }
 }
 
+void fix_size(int Yes)
+{
+    fprintf(stderr, "\nSYMSHX11: %s\n","Fix size options not implemented jet, but ignored");
+}
+
 int init_plot(int a,int b,int ca,int cb)
-/* typowa dla platformy inicjacja grafiki/semigrafik
+/* typowa dla platformy inicjacja grafiki/semigrafiki
  a,b to wymagane rozmiary ekranu */
 {
 int* disp_depht;
 int  disp_depht_num=0,i;
+XVisualInfo MyVInfo;//Info o wyswietlaniu
+XSetWindowAttributes MyAttrs;
+Visual     *MyVisual;//Rodzaj wyświetlania
 ini_a=a;
 ini_b=b;
 ini_ca=ca;
@@ -1266,18 +1524,24 @@ ini_cb=cb;
     	fprintf(stderr,"Available display depths: ");
     	for(i=0;i<disp_depht_num;i++)
     		fprintf(stderr,"%d ",disp_depht[i]);
-    	putchar('\n');
+#ifdef CREATE_FULL
+    	fprintf(stderr,"Only depth = 32 could be used!\n");
+#else
+        fprintf(stderr,"\n");
+#endif              
     	}
 
-    /* Search for depht */
+/* Search for depht */
+#ifndef CREATE_FULL
     for(i=0;i<disp_depht_num;i++)
     	if(disp_depht[i]>=default_deph)
     		{
-    		default_deph=disp_depht[i];/*Pierwszy >= wymaganemu */
+    		default_deph=disp_depht[i];/*Pierwszy od tyłu >= wymaganemu */
     		break;
-    		}
+        }
   if(trace)
    	fprintf(stderr,"Selected depth %d\n",default_deph);
+#endif
 
     /* Note that in a real application, x and y would default
      * to 0 but would be settable from the command line or
@@ -1293,16 +1557,36 @@ ini_cb=cb;
 
  /* Create opaque window */
  #ifdef CREATE_FULL
-   win = XCreateWindow(display,
-   		RootWindow(display,screen_num),
-          	x, y, width, height, border_width,
-	  	default_deph /* Window deph */,
+   if (!XMatchVisualInfo(display, XDefaultScreen(display), 32, TrueColor, &MyVInfo))
+    {
+      fprintf(stderr, "no visual with true color & 32 depth!\n");
+      return 1;
+   }
+   else
+   {
+        fprintf(stderr, "Matched visual 0x%lx class %d (%s) depth %d\n",
+         MyVInfo.visualid,
+         MyVInfo.class,
+         MyVInfo.class == TrueColor ? "TrueColor" : "unknown",
+         MyVInfo.depth);
+   }
+   MyVisual = MyVInfo.visual;
+
+   MyAttrs.colormap = XCreateColormap(display, RootWindow(display,screen_num), MyVisual, AllocNone);
+   MyAttrs.background_pixel = 0;
+   MyAttrs.border_pixel = 0;
+   
+   win = XCreateWindow(display,                 /* Display *display;*/
+   		RootWindow(display,screen_num), /* Parent */
+          	x, y, 
+                width, height, border_width,
+	  	MyVInfo.depth/* Window deph */,
           	InputOutput /*WindowClass*/,
-	  	CopyFromParent /* Visual */,
-	  	0	/* Valuemask */,
-	  	0     /* Atributes */
+	  	MyVisual /* Visual */,
+	  	CWBackPixel | CWColormap | CWBorderPixel, /* Valuemask */
+	  	&MyAttrs    /* Atributes */
 	 	);
- #else
+#else
     win = XCreateSimpleWindow(display,
     			RootWindow(display,screen_num),
           		x, y, width, height, border_width,
@@ -1311,8 +1595,12 @@ ini_cb=cb;
           		);
  #endif
 
+    XSync(display, True);
+    if(trace)
+        fprintf(stderr,"Window created");
+    
     window_size = BIG_ENOUGH ;
-    buforek[0] = NODATA; /* Zeruje buiror wejscia */
+    buforek[0] = NODATA; /* Zeruje bufor wejscia */
 
 
     /* Get available icon sizes from window manager */
@@ -1357,17 +1645,21 @@ ini_cb=cb;
                                "iconName failed.\n", progname);
        exit(-1);  return 0;
     }
+    
     wm_hints->initial_state = NormalState;
     wm_hints->input = True;
     wm_hints->icon_pixmap = icon_pixmap;
     wm_hints->flags = StateHint | IconPixmapHint | InputHint;
+    
     class_hints->res_name = progname;
     class_hints->res_class = "Basicwin";
+    
     XSetWMProperties(display, win, &windowName, &iconName,
           largv, largc, size_hints, wm_hints,
           class_hints);
    /* } ??? */
 
+    
     if(trace)
         fprintf(stderr,"Icon Loaded\n");
 
@@ -1376,6 +1668,7 @@ ini_cb=cb;
 	  ExposureMask | KeyPressMask |
  	  ButtonPressMask | StructureNotifyMask );
 
+    XSync(display, True);
     if(trace)
         fprintf(stderr,"Input selected\n");
 
@@ -1417,10 +1710,63 @@ ini_cb=cb;
     return 1;
 }
 
+
+static void CloseAll()
+{
+ if(display==0)
+	{
+	if(trace) fprintf(stderr,"Traing to free resources of NULL display!\n");
+	return;
+	}
+
+ if(font_info){
+ 	XUnloadFont(display, font_info->fid);
+	font_info=NULL; }
+
+ if(gc!=0){
+ 	XFreeGC(display, gc);
+	gc=0; }
+
+#ifndef __MSDOS__
+if(colormap!=0)
+	{
+ 	XUninstallColormap(display,colormap);
+ 	XFreeColormap(display,colormap);
+	colormap=0;
+	}
+#endif
+
+if(alloc_cont!=0)
+ 	{
+	XFreePixmap(display,cont_pixmap);
+	if(trace)
+  		fprintf(stderr,"%s %x\n","FREE PIXMAP",cont_pixmap);
+	cont_pixmap=0;
+	}
+
+if(win!=0)
+    {
+    if(trace)
+	   fprintf(stderr, "%s %x ","DESTROY WINDOW",win);
+
+    XDestroyWindow(display,win);
+    if(trace)
+	   fprintf(stderr, "-OK win: %x\n",win);
+    win=0;
+    }
+
+if(trace)
+	   fprintf(stderr,"CLOSE DISPLAY");
+XCloseDisplay(display);
+if(trace)
+	   fprintf(stderr,"-OK\n");
+display=0;
+}
 /*#pragma exit close_plot*/
 
-void shell_setup(//const char* title,int iargc,char* iargv[]
-		           const char* title,int iargc,const char* iargv[]
+void shell_setup(//const char* title, int iargc, char* iargv[]
+                 const char* title,int iargc,char* iargv[]
+		 //const char* title, int iargc, const char* iargv[]
 		)
 {
 /* Przekazanie parametrow wywolania */
@@ -1487,8 +1833,20 @@ int		dump_screen(const char* Filename)
 /* Zapisuje zawartosc ekranu do pliku graficznego
  * w naturalnym formacie platformy: BMP, XBM itp */
 {
-	fprintf(stderr,"'dump_screen()' not implemented jet\n");
-	return 0;
+	
+	if(cont_pixmap)
+        {
+            
+           if(XWriteBitmapFile(display, Filename, cont_pixmap, width, height, -1, -1)!=BitmapSuccess)
+           {
+               fprintf(stderr,"'dump_screen(%s)' failed \n",Filename);
+           }
+           else
+           {
+               fprintf(stderr,"'dump_screen(%s)' finished with SUCCES! \n",Filename);
+           }
+        }
+        return 0;
 }
 
 

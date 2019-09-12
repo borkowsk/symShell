@@ -1,0 +1,35 @@
+# Project: GoryCukru
+# Makefile created by Dev-C++ 4.9.9.1
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = symshwin.o errorent.o GoryCukru.o $(RES)
+LINKOBJ  = symshwin.o errorent.o GoryCukru.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib" "c:/Dev-Cpp/lib/libgdi32.a" "c:/Dev-Cpp/lib/libcomdlg32.a"  
+INCS =  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/include/c++/3.3.1"  -I"C:/Dev-Cpp/include/c++/3.3.1/mingw32"  -I"C:/Dev-Cpp/include/c++/3.3.1/backward"  -I"C:/Dev-Cpp/lib/gcc-lib/mingw32/3.3.1/include"  -I"C:/Dev-Cpp/include" 
+BIN  = GoryCukru.exe
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = $(INCS)  
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before GoryCukru.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "GoryCukru.exe" $(LIBS)
+
+symshwin.o: symshwin.c
+	$(CC) -c symshwin.c -o symshwin.o $(CFLAGS)
+
+errorent.o: errorent.c
+	$(CPP) -c errorent.c -o errorent.o $(CXXFLAGS)
+
+GoryCukru.o: GoryCukru.cpp
+	$(CPP) -c GoryCukru.cpp -o GoryCukru.o $(CXXFLAGS)
