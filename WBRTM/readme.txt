@@ -1,2 +1,2 @@
 
-To wersja WBRTM już po kilku latach rozwoju. Starszej na razie nie znalazłem
+To wersja WBRTM po zmianie struktury katalogów. Starsze wersje - czysto historyczne, będą w innym pod-drzewie
