@@ -1,0 +1,35 @@
+# Project: TestMouse
+# Makefile created by Dev-C++ 4.9.9.1
+
+CPP  = g++.exe -D__DEBUG__
+CC   = gcc.exe -D__DEBUG__
+WINDRES = windres.exe
+RES  = TestMouse_private.res
+OBJ  = ../symshwin.o ../tests/Testmous.o $(RES)
+LINKOBJ  = ../symshwin.o ../tests/Testmous.o $(RES)
+LIBS =  -L"C:/Program Files/Dev-Cpp/lib" -mwindows "C:/Program Files/Dev-Cpp/lib/libgdi32.a" "C:/Program Files/Dev-Cpp/lib/libcomdlg32.a"  -g3 
+INCS =  -I"C:/Program Files/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Program Files/Dev-Cpp/include/c++/3.3.1"  -I"C:/Program Files/Dev-Cpp/include/c++/3.3.1/mingw32"  -I"C:/Program Files/Dev-Cpp/include/c++/3.3.1/backward"  -I"C:/Program Files/Dev-Cpp/lib/gcc-lib/mingw32/3.3.1/include"  -I"C:/Program Files/Dev-Cpp/include" 
+BIN  = TestMouse.exe
+CXXFLAGS = $(CXXINCS)   -g3
+CFLAGS = $(INCS)   -g3
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before TestMouse.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "TestMouse.exe" $(LIBS)
+
+../symshwin.o: ../symshwin.c
+	$(CC) -c ../symshwin.c -o ../symshwin.o $(CFLAGS)
+
+../tests/Testmous.o: ../tests/Testmous.cpp
+	$(CPP) -c ../tests/Testmous.cpp -o ../tests/Testmous.o $(CXXFLAGS)
+
+TestMouse_private.res: TestMouse_private.rc 
+	$(WINDRES) -i TestMouse_private.rc --input-format=rc -o TestMouse_private.res -O coff 

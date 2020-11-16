@@ -1,0 +1,509 @@
+ 		// Zakochani agenci (program SYMSHELLA pokazuj¹cy idee ruchu losowego i celowego)
+    /////////////////////////////////////////////////////////////////////////////////// 
+ 	// POD Dev-Cpp potrzebne s¹ dwie bibloteki:
+ 	// ".../Dev-Cpp/lib/libgdi32.a" 
+ 	// oraz "...Dev-Cpp/lib/libcomdlg32.a"
+ 	
+ 	#include "symshell.h"
+ 	#include "Wieloboki.hpp"
+ 	#include <iostream>
+ 	#include <cstdlib>
+ 	#include <cstdio>
+ 	#include <cmath>
+ 	#include <cassert>
+ 	using namespace std;
+ 	
+ 	///////////////////////////////
+ 	float GLOBAL_TEMPERATURE; // powiedzmy, ¿e w Kelwinach
+ 	const unsigned int SIZE_X = 640;
+ 	const unsigned int SIZE_Y = 480;
+ 	const unsigned int DELAY = 1000; 
+ 	const unsigned short NIEBIESKI = 150;
+ 	const unsigned short ZIELONY = 210;
+ 	const unsigned short BIALY = 255;
+ 	const unsigned short CZARNY = 256;
+ 	const unsigned short SZARY = 400;
+ 	const unsigned short NON = 1;
+ 	const float DENSITY_GRAY = 0;
+ 	const float DENSITY_WHITE = 0.1;
+ 	const float DENSITY_BLACK = 0;
+ 	Wielobok plant(Wielobok::Ufo());
+ 	Wielobok surface(Wielobok::Romb());
+ 	Wielobok center_plant(Wielobok::Domek());
+ 	Wielobok sun(Wielobok::Ludzik(0));
+ 	Wielobok sun_center(Wielobok::Ludzik(1));
+ 	float solar_luminosity = 1000;//1366.1; // Stala sloneczna [W/m2]
+ 	const float STEFANO_BOLTZMAN = 0.00000005669;
+ 	float ALBEDO_GREY = 0.5;
+ 	float ALBEDO_BLACK = 0.25;
+ 	float ALBEDO_WHITE = 0.75;
+ 	float ALBEDO_SURFACE = 0.5;
+ 	float albedo_planet;
+ 	double przyrostBialych = 0;
+ 	//float idealna_temperatura_bialych = 298;
+ 	///////////////////////////////    
+ 	class Field
+    {
+          private:
+                  
+                  float temperature;
+                  int color;
+                  
+          public:
+                 Field()
+                 {
+                  
+                 }  
+                 float getTemperature()
+                 {
+                       return temperature;      
+                 }
+                 void setT(float t)
+                 {
+                      temperature = (temperature*2+t)/3;
+                 }
+                 void setTemperature(float t)
+                 {
+                      temperature = t;     
+                 }
+                 void setColor(int col)
+                 {
+                      color = col;     
+                      //temperature = rand()%900;                 
+       
+                 }
+                 int getColor()
+                 {
+                     return color;    
+                 }  
+                 void Rysuj(int a, int b)
+                 { 
+                      
+                   if (color != NON)
+                   {
+                      plant.Rysuj(160+a*20,b*20,color);
+                      center_plant.Rysuj(160+a*20,b*20,250);  
+                   }
+                 }
+                 void beam()
+                 {
+                      float albedo;
+                      if (color==SZARY) albedo = ALBEDO_GREY;
+                      else if (color==BIALY) albedo = ALBEDO_WHITE;
+                      else if (color==CZARNY) albedo = ALBEDO_BLACK;
+                      else albedo = ALBEDO_SURFACE;
+                      //double a = solar_luminosity * (1-albedo)  / STEFANO_BOLTZMAN;
+                      //temperature = pow(a, 0.25); 
+                      double a = 0.25* solar_luminosity * (albedo_planet-albedo)  / STEFANO_BOLTZMAN + pow(GLOBAL_TEMPERATURE,4);          
+                      temperature = pow(a, 0.25);
+                 }
+           
+                   
+          
+          
+    };
+ 	double normal(const double &mean, const double &std)
+{
+  static const double pii=3.1415927;
+  static const double r_max=RAND_MAX+1;
+  return std*sqrt(-2*log((rand()+1)/r_max))*sin(2*pii*rand()/r_max)+mean;
+}
+ 	int colorFromTemperature(float temp)
+ 	{
+        return (int)(temp/546*80+170);    
+    }
+ 	
+ 	
+ 	Field board[24][24];
+ 	Field newBoard[24][24];
+ 	///////////////////////////////
+ 	
+ 	float count(int color)
+ 	{
+       float result = 0;
+       for(int i = 0; i<24;i++)
+         for(int j = 0; j<24;j++)
+                 if(color==board[i][j].getColor())
+                     result++; 
+       return result;    
+    }
+ 	
+    void inicjalizacja()
+    {
+         
+         srand(time(NULL));
+         for(int i=0; i<24; i++)
+                 for(int j=0; j<24; j++)
+                         board[i][j].setColor(NON);
+         int i = 0;
+         while(i<24*24*DENSITY_GRAY)
+         {
+                int a = rand()%24;
+                int b = rand()%24;
+                if (board[a][b].getColor() == NON)
+                   {
+                        board[a][b].setColor(SZARY);
+                        i++;
+                   }
+         }
+         i = 0;
+         while(i<24*24*DENSITY_WHITE)
+         {
+                int a = rand()%24;
+                int b = rand()%24;
+                if (board[a][b].getColor() == NON)
+                   {
+                        board[a][b].setColor(BIALY);
+                        i++;
+                   }
+         }
+         i = 0;
+         while(i<24*24*DENSITY_BLACK)
+         {
+                int a = rand()%24;
+                int b = rand()%24;
+                if (board[a][b].getColor() == NON)
+                   {
+                        board[a][b].setColor(CZARNY);
+                        i++;
+                   }
+         }
+         
+         albedo_planet = count(NON)*ALBEDO_SURFACE/576+count(BIALY)*ALBEDO_WHITE/576+count(SZARY)*ALBEDO_GREY/576+count(CZARNY)*ALBEDO_BLACK/576;
+         double a = solar_luminosity * (1-albedo_planet)  / STEFANO_BOLTZMAN;
+                      GLOBAL_TEMPERATURE = pow(a, 0.25);
+        // board[1][1].setColor(BIALY);
+         
+     
+    }    
+    
+    int ileSasiadow(int a,int b,int cl)
+    {
+        int licznik = 0;
+        if(a>0)
+               if(board[a-1][b].getColor()==cl)
+                       licznik++;     
+        if(a<23)
+               if(board[a+1][b].getColor()==cl)
+                       licznik++;
+        if(b>0)
+               if(board[a][b-1].getColor()==cl)
+                       licznik++;                         
+        if(b<23)
+               if(board[a][b+1].getColor()==cl)
+                       licznik++; 
+        if(a>0&&b>0)   
+               if(board[a-1][b-1].getColor()==cl)
+                       licznik++;  
+        if(a>0&&b<23)   
+               if(board[a-1][b+1].getColor()==cl)
+                       licznik++; 
+        if(a<23&&b>0)   
+               if(board[a+1][b-1].getColor()==cl)
+                       licznik++; 
+        if(a<23&&b<23)   
+               if(board[a+1][b+1].getColor()==cl)
+                       licznik++;
+        return licznik;                                                         
+    }
+    int znak = 1;
+    float srednia(int i,int j){
+          return (board[i-1][j-1].getTemperature()+board[i-1][j+1].getTemperature()+board[i+1][j-1].getTemperature()+board[i+1][j+1].getTemperature())/4;
+          
+          }
+    void krok()
+    {      
+         albedo_planet = count(NON)*ALBEDO_SURFACE/576+count(BIALY)*ALBEDO_WHITE/576+count(SZARY)*ALBEDO_GREY/576+count(CZARNY)*ALBEDO_BLACK/576;
+          double a = solar_luminosity * (1-albedo_planet)  / STEFANO_BOLTZMAN;
+                      GLOBAL_TEMPERATURE = pow(a, 0.25);  
+          // if (solar_luminosity==1750 || solar_luminosity==1100) znak=-znak;
+         //  solar_luminosity = solar_luminosity + 1;
+           
+       for(int i=0; i <24;i++)
+               for(int j = 0;j<24;j++)
+                       newBoard[i][j] = board[i][j]; 
+       for(int i =0; i<24;i++)
+               for(int j=0; j<24; j++)
+               {
+                       newBoard[i][j].beam();
+                       board[i][j].beam();
+               }
+       for(int i = 1; i<24;i++)
+               for(int j=1; j<24; j++)
+               {
+                       board[i][j].setT(board[i][j].getTemperature()/2+srednia(i,j)/2);
+               }               
+                       //float zgon;
+                      /* if(board[i][j].getColor()!=NON)
+                       {                            
+                           // zgon = 1 - (22.5 - board[i][j].getTemperature() - 273.15)/22.5;
+                           float rate = 0.000001*(22.5 - board[i][j].getTemperature() + 273.15)*(22.5 - board[i][j].getTemperature() + 273.15);
+                           if ((0.3 > (float(rand()%1000)/1000)) )
+                               newBoard[i][j].setColor(NON);
+                       }
+                       else if(board[i][j].getColor()==NON)
+                       {
+                           //zgon = 1 - (22.5 - board[i][j].getTemperature() - 273.15)/22.5;
+                           float s = 1/pow(22.5-5,2);
+                           float rate = 1-s*(22.5 - board[i][j].getTemperature() + 273.15)*(22.5 - board[i][j].getTemperature() + 273.15);
+                           if ((rate > (float(rand()%1000)/1000)) )
+                              if((float)(rand()%1000)/1000 > 0.566667)
+                                   newBoard[i][j].setColor(BIALY);      
+                              else if((float)(rand()%1000)/1000 < 0.333333)
+                                   newBoard[i][j].setColor(CZARNY);
+                              else
+                                   newBoard[i][j].setColor(SZARY);                 
+                       }*/
+                       float s = 1/pow(22.5-5,2);
+                      double g = 0.25* solar_luminosity * (albedo_planet-ALBEDO_WHITE)  / STEFANO_BOLTZMAN + pow(GLOBAL_TEMPERATURE,4);          
+                      double temperatureb = pow(g, 0.25);
+                       float b= 1-s*(22.5 - temperatureb + 273.15)*(22.5 - temperatureb + 273.15);
+                       //printc(0,260,128,200,"aaaaa: %g ",temperatureb,"");
+                       //delay_ms(3000);
+                       przyrostBialych = (count(BIALY)/576)*(count(NON)/576*b-0.3);
+                       przyrostBialych = przyrostBialych*576;
+                       if (przyrostBialych<0)
+                          while(przyrostBialych<0)
+                          {
+                             int i = rand()%24; int j = rand()%24;
+                             if(board[i][j].getColor()==BIALY)              
+                             {
+                                 newBoard[i][j].setColor(NON);
+                                 przyrostBialych++;                                                       
+                             }                                     
+                          }
+                       else if (przyrostBialych>0)
+                          while(przyrostBialych>0)
+                          {
+                             int i = rand()%24; int j = rand()%24;
+                             if(board[i][j].getColor()==NON)              
+                             {
+                                 newBoard[i][j].setColor(BIALY);
+                                 przyrostBialych--;                                                       
+                             }                                     
+                          }
+                                
+               
+               
+        /*       for(int i =1; i<23;i++)
+                       for(int j=1; j<23; j++)
+                       {
+                               //float sredniaSasiadow = (board[i-1][j-1].getTemperature()+board[i][j-1].getTemperature()
+                               //                       +board[i+1][j-1].getTemperature()+board[i-1][j].getTemperature()
+                               //                        +board[i+1][j].getTemperature()+board[i-1][j+1].getTemperature()
+                               //                        +board[i][j+1].getTemperature()+board[i+1][j+1].getTemperature())/8;
+                               //float newTemperature = (board[i][j].getTemperature() + sredniaSasiadow)/2;
+                               //newBoard[i][j].setTemperature(newTemperature);      
+                               newBoard[i-1][j-1].setT(board[i][j].getTemperature());
+                               newBoard[i-1][j].setT(board[i][j].getTemperature());
+                               newBoard[i-1][j+1].setT(board[i][j].getTemperature());
+                               newBoard[i][j-1].setT(board[i][j].getTemperature());
+                               newBoard[i][j+1].setT(board[i][j].getTemperature());
+                               newBoard[i-1][j-1].setT(board[i][j].getTemperature());
+                               newBoard[i-1][j].setT(board[i][j].getTemperature());
+                               newBoard[i-1][j+1].setT(board[i][j].getTemperature());
+                       }
+             /* newBoard[0][0].setTemperature((board[0][0].getTemperature() + (board[1][0].getTemperature()+board[1][1].getTemperature()
+                                                                         +board[0][1].getTemperature()+board[23][0].getTemperature()
+                                                                         +board[23][1].getTemperature())/5)/2); 
+              newBoard[23][0].setTemperature((board[23][0].getTemperature() + (board[22][0].getTemperature()+board[22][1].getTemperature()
+                                                                         +board[0][1].getTemperature()+board[0][0].getTemperature()
+                                                                         +board[23][1].getTemperature())/5)/2); 
+              newBoard[0][23].setTemperature((board[0][23].getTemperature() + (board[0][22].getTemperature()+board[1][22].getTemperature()
+                                                                         +board[23][22].getTemperature()+board[23][23].getTemperature()
+                                                                         +board[1][23].getTemperature())/5)/2);                                                                         
+              newBoard[23][23].setTemperature((board[23][23].getTemperature() + (board[23][22].getTemperature()+board[22][22].getTemperature()
+                                                                         +board[22][23].getTemperature()+board[0][23].getTemperature()
+                                                                         +board[0][22].getTemperature())/5)/2);                                                                                                                                    
+              
+              for (int i=1; i<23;i++)
+              {
+                  newBoard[i][0].setTemperature((board[i][0].getTemperature() + (board[i-1][0].getTemperature()+board[i-1][1].getTemperature()
+                                                                         +board[i][1].getTemperature()+board[i+1][1].getTemperature()
+                                                                         +board[i+1][0].getTemperature())/5)/2);
+                  newBoard[i][23].setTemperature((board[i][23].getTemperature() + (board[i-1][23].getTemperature()+board[i-1][22].getTemperature()
+                                                                         +board[i][22].getTemperature()+board[i+1][22].getTemperature()
+                                                                         +board[i+1][23].getTemperature())/5)/2);
+                  newBoard[0][i].setTemperature((board[0][i].getTemperature() + (board[0][i-1].getTemperature()+board[1][i-1].getTemperature()
+                                                                         +board[1][i].getTemperature()+board[1][i+1].getTemperature()
+                                                                         +board[0][i+1].getTemperature())/5)/2);
+                  newBoard[23][i].setTemperature((board[23][i].getTemperature() + (board[23][i-1].getTemperature()+board[22][i-1].getTemperature()
+                                                                         +board[22][i].getTemperature()+board[22][i+1].getTemperature()
+                                                                         +board[23][i+1].getTemperature())/5)/2);
+              }*/
+       for(int i=0; i <24;i++)
+               for(int j = 0;j<24;j++)
+                       board[i][j] = newBoard[i][j];
+       flush_plot();                              
+    }
+    
+
+   string intToStr(int n)
+{
+     string tmp, ret;
+     if(n < 0) {
+          ret = "-";
+          n = -n;
+     }
+     do {
+          tmp += n % 10 + 48;
+          n -= n % 10;
+     }
+     while(n /= 10);
+     for(int i = tmp.size()-1; i >= 0; i--)
+          ret += tmp[i];
+     return ret;
+}
+    void replot()
+    //Procedura odrysowujaca aktualny stan
+ 	{
+      clear_screen();
+      
+      sun.Rysuj(-5,-5,50); 
+     sun.Rysuj(5,5,50); 
+     sun.Rysuj(0,0,250);
+     sun_center.Rysuj(37,43,55);
+    //rysowanie
+    
+     //surface.Rysuj(160,0,ZIELONY);       
+               line(640,481,
+              159,481,
+              1); 
+               line(159,481,
+              159,0,
+              1); 
+              for(int i = 0; i<24; i++)
+                      for(int j = 0; j<24; j++)
+                      {
+                           surface.Rysuj(160+i*20,j*20,colorFromTemperature(board[i][j].getTemperature()));
+                           board[i][j].Rysuj(i,j);      
+                      }
+                      
+                      //sprintf(str, "%d", 200);albedo_planet
+                      printc(0,200,128,200,"Irradiancja: %g W/m^2",solar_luminosity,"");
+                      printc(0,220,128,200,"Temperatura: %g C",GLOBAL_TEMPERATURE-273.15,"");
+                      printc(0,240,128,200,"Temperatura[10][10]: %g C",board[10][10].getTemperature()-273.15,"");
+                      printc(0,260,128,200,"alb glob: %g ",albedo_planet,"");
+                      printc(0,280,128,200,"bialych: %g %%",count(BIALY)/576*100,"");
+                                             
+                      // float b= 1-s*(22.5 - board[i][j].getTemperature() + 273.15)*(22.5 - board[i][j].getTemperature() + 273.15);
+                      // int przyrostBialych = int((float)count(BIALY)/576*((float)count(NON)/576*b-0.3));
+                      
+                      float s = 1/pow(22.5-5,2);
+                      double g = 0.25* solar_luminosity * (albedo_planet-ALBEDO_WHITE)  / STEFANO_BOLTZMAN + pow(GLOBAL_TEMPERATURE,4);          
+                      double temperatureb = pow(g, 0.25);
+                       float b= 1-s*(22.5 - temperatureb + 273.15)*(22.5 - temperatureb + 273.15);
+                       przyrostBialych = (count(BIALY)/576*100)*(count(NON)*100/576*b-0.3)/100*576;
+                       printc(0,320,128,200,"temperatureb: %g ",temperatureb,"");
+                       printc(0,300,128,200,"p b: %g ",przyrostBialych,"");
+                       //printc(0,260,128,200,"aaaaa: %g ",temperatureb,""); 
+              //kUfo.Rysuj();
+            //  for (int i = 50; i < 256; i++)
+             //   line(i,0,i,400,i);
+             
+                     for(int i=197; i < GLOBAL_TEMPERATURE; i++)
+                     {
+                             if (GLOBAL_TEMPERATURE < 278)
+                                line(i-197,400,i-197,420,NIEBIESKI);
+                             else if (GLOBAL_TEMPERATURE > 313)
+                                line(i-197,400,i-197,420,50);
+                             else
+                                line(i-197,400,i-197,420,ZIELONY);
+                     }
+ 	}
+
+    void statystyka()
+    {    
+     /*    float sum = 0;
+        for (int i = 0; i<24;i++)
+            for(int j = 0; j<24 ;j++)
+                     sum = sum + board[i][j].getTemperature();
+        GLOBAL_TEMPERATURE = sum / 24 / 24;             */
+        //printc(0,200,500,500,"%u %s        Siotson",100,"aaa");
+        
+
+           
+    }
+
+ 	//Zmienne do obs³ugi zdarzeñ i dalej funkcje które to robi¹, w tym main()
+ 	
+    const int WAIT=10; //Co ile nawrótów pêli zmieniaæ kolor
+    const int DELA=10/WAIT;//Oczekiwanie w obrêbie pêtli
+ 	const char* CZEKAM="..."; 
+ 	unsigned long loop=0;
+
+ 	void read_mouse() //Procedura obslugi "kliku" myszy
+ 	{ 
+       int xpos,ypos,click;
+       if(get_mouse_event(&xpos,&ypos,&click)!=-1)//Operator & - pobranie adresu
+	   {
+          //.....x=xpos;
+          //.....y=ypos;
+          //TODO - inspekcja agenta
+          replot();                                                   
+       }                      
+ 	}
+
+ 	int main(int argc,char* argv[])//Potrzebne s¹ paramatry wywo³ania programu
+ 	{
+       mouse_activity(1);       //Czy mysz bêdzie obs³ugiwana   
+       buffering_setup(1);      //Czy pamietac w bitmapie zawartosc ekranu TAK
+       set_background(256+50);  //Kolor ciemnoszary
+ 	   fix_size(1);	            //Czy symulowaæ niezmiennosci rozmiarow okna TAK
+ 	   shell_setup("Œwiat stokrotek",argc,argv);//Ustalenie tytu³u i konfiguracji z linii komend
+ 	   init_plot(SIZE_X,SIZE_Y,0,1);// size x size pixeli + 1 wiersz znakow pod spodem
+ 	   
+ 	   inicjalizacja();         //Przygotowanie paramerów
+ 	   
+        bool kontynuuj=true;	//Zmienna steruj¹ca zakoñczeniem programu
+        while(kontynuuj)        //PÊTLA OBS£UGI ZDARZEÑ
+ 	    { 
+ 	      int pom;
+ 	      loop++; //Zliczanie nawrotów
+          if(input_ready()) //Czy jest coœ do obs³ugi?
+ 	      {
+ 	       pom=get_char(); //Przeczytaj nades³any znak
+ 	       switch(pom)
+ 	       {
+ 	       case '\r': replot();break;//Wymagane odrysowanie
+ 	       case '\b': read_mouse();break;//Zdarzenie myszy
+ 	       case EOF:  //Typowe zakoñczenie
+ 	       case  27:  //ESC
+ 	       case 'q':  //Zakoñczenie zdefiniowane przez programiste
+ 	       case 'Q': kontynuuj=false;break;             
+ 	       default:
+                print(0,screen_height()-char_height('N'),"Nie wiem co znaczy %c [%d] ",pom,pom);
+ 	            flush_plot();	// Bitmapa gotowa   
+ 	            break;
+            }
+         cout<<"Zareagowano na kod nr "<<int(pom)<<" w nawrocie "<<loop<<"; temp (K): "<<solar_luminosity<<" "<<GLOBAL_TEMPERATURE<<endl;   
+ 	  }
+ 	  else //Akcja na wypadek braku zdarzeñ
+ 	  {
+           statystyka();
+      krok();    //Poruszanie
+       //Obliczanie chwilowych statystyk
+      replot();  //Rysowanie   
+      if(loop%WAIT<WAIT/2)
+         printc(0,screen_height()-char_height('C'),128,255,"%u %s        Siotson ",loop,CZEKAM);
+      else
+        printc(0,screen_height()-char_height('C'),255,28,"%u %s        Siotson",loop,CZEKAM);       
+ 	  flush_plot();// Bitmapa po modyfikacji ju¿ gotowa   
+ 	 /* if(loop%10==0)
+ 	  {
+        char Filename[128];
+         sprintf(Filename,"Dump%5u",loop);
+        dump_screen(Filename); 
+      } */
+ 	  delay_ms(DELAY);//Wymuszenie oczekiwania - ¿eby pêtla nie zjada³a ca³ego procesora  
+                 //I ¿eby siê wszystko nie dzia³o zbyt szybko!
+ 	  } 
+ 	}
+
+ 	cout<<"Dealokacja tablicy agentów"<<endl;
+ //	delete []Agenci; //Taka dziwna sk³adnia, bo wywo³uje destruktory!
+
+ 	cout<<"Wykonano "<<loop<<" obrotow petli.\nDo widzenia!\n"<<endl;
+ 	close_plot(); //Po zabawie - zamykam okno
+ 	return 0;
+ 	}

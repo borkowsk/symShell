@@ -1,0 +1,32 @@
+# Project: Feigenbaum
+# Makefile created by Dev-C++ 4.9.9.1
+
+CPP  = g++.exe -D__DEBUG__
+CC   = gcc.exe -D__DEBUG__
+WINDRES = windres.exe
+RES  = 
+OBJ  = logistyczne8.o ../../WBRTM/SYMSHELL/src/Windows/symshwin.o $(RES)
+LINKOBJ  = logistyczne8.o ../../WBRTM/SYMSHELL/src/Windows/symshwin.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib" ../../_bin_c/DevWin/libcomdlg32.a ../../_bin_c/DevWin/libgdi32.a  -g3 
+INCS =  -I"C:/Dev-Cpp/include"  -I"S:/WBRTM/SYMSHELL" 
+CXXINCS =  -I"C:/Dev-Cpp/include/c++/3.3.1"  -I"C:/Dev-Cpp/include/c++/3.3.1/mingw32"  -I"C:/Dev-Cpp/include/c++/3.3.1/backward"  -I"C:/Dev-Cpp/lib/gcc-lib/mingw32/3.3.1/include"  -I"C:/Dev-Cpp/include"  -I"S:/WBRTM/SYMSHELL" 
+BIN  = Feigenbaum.exe
+CXXFLAGS = $(CXXINCS)   -traditional-cpp -w -fexpensive-optimizations -O1 -g3
+CFLAGS = $(INCS)   -traditional-cpp -w -fexpensive-optimizations -O1 -g3
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Feigenbaum.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "Feigenbaum.exe" $(LIBS)
+
+logistyczne8.o: logistyczne8.cpp
+	$(CPP) -c logistyczne8.cpp -o logistyczne8.o $(CXXFLAGS)
+
+../../WBRTM/SYMSHELL/src/Windows/symshwin.o: ../../WBRTM/SYMSHELL/src/Windows/symshwin.c
+	$(CPP) -c ../../WBRTM/SYMSHELL/src/Windows/symshwin.c -o ../../WBRTM/SYMSHELL/src/Windows/symshwin.o $(CXXFLAGS)
