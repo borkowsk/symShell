@@ -1,0 +1,15 @@
+Model "2x2 gas v1.0mt ". File version Mon Mar 23 15:13:12 2015
+
+*** NAMES OF PARAMETERS:
+
+# PARAMETERS FOR SINGLE SIMULATION
+DENSITY: How many particles Range: <1,10000>; Default: 2500
+SIDELEN: Side of the world Range: <0,1000>; Default: 500
+
+# TECHNICAL PARAMETERS
+VISUAL: How many steps between visualisation Range: <1,10000>; Default: 1
+THREADS: How many threads Range: <1,16>; Default: 3
+
+# END OF LIST
+* JUST USE LIST OF SPACE SEPARATED PAIRS PARAMETER=VALUE
+<<press the return/enter key>>
