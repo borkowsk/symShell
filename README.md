@@ -18,6 +18,8 @@ EN: The currently used version is in the __symShell2__ repository, and the educa
 
 **Licencing**
 
+GNU General Public License v3.0
+
 You can use this software freely for educational and research purposes, but if you feel that it would be appropriate to repay somehow, please finance me a big coffee :-)
 
 **COFFEE**
