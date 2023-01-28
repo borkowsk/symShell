@@ -9,6 +9,7 @@
 
 const char* SYMULATION_NAME="CONFLICTS 1.22 BOCA/WARSZAWA: "__DATE__;
 const char* SCREENDUMPNAME="CONFLICTS_v1.22_";
+unsigned lang_selector=1;
 
 const char* LogName="conf.log";  //Nazwa tego logu
 const char* MetaExpFileName="metaconf.out";//Nazwa logu meta-eksperymentu
