@@ -658,7 +658,7 @@ void Swiat::make_basic_sources(sources_menager& Series)
 void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
 {
 											assert(this->HasAreaMenager());
-	//world::make_default_visualisation(Lufciki);
+	world::make_default_visualisation(); //Tworzy np. OutArea
 
 	this->OutArea->set(0,0,250,250);
 
@@ -1067,7 +1067,7 @@ cout<<"Ctrl-I for HELP, Ctrl-Q to quit, Ctrl-A to start symulation."<<endl;
 
 if(MultiExp<2)
 {
-    MojSwiat.initialize(&Lufciki);
+	MojSwiat.initialize(&Lufciki);
     MojExperyment.tworz_lufciki(Lufciki);       //Serie i Lufciki testowe spoza wlasciwej symulacji
     Lufciki.replot();
     Lufciki.process_input();//Pierwsze zdazenia. Koncza sie po ctrl-B	
