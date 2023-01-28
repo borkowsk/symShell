@@ -140,7 +140,7 @@ class Swiat:public world
 {
 public:
     class Agent
-    {
+	{
         double x,y,r;   //Wspolrzedne wizualizacyjne agenta
 		double state;   //Stan agenta -1..1 (?)
         double pstate;  //Poprzedni stan agenta
@@ -160,7 +160,7 @@ public:
 
     class Connection
     {
-        size_t start_node;   //Indeks wezla startowego
+		size_t start_node;   //Indeks wezla startowego
         size_t end_node;     //Indeks wezla koncowego
         double weight;       //Waga polaczenia
         double lastact;      //Ostatnio rejestrowana aktywnosc polaczenia
@@ -169,8 +169,8 @@ public:
             {}
         void set(size_t s,size_t e,double w=0);   
         void clean_act(){lastact=0;}
-    friend class Swiat; //Musi miec dostep do pul, zeby przypiac zrodla danych
-    };
+	friend class Swiat; //Musi miec dostep do pól, zeby przypiac zrodla danych
+	};
 
 private:
     wb_dynarray<Agent> agents;  //Lista agentów
@@ -182,12 +182,12 @@ private:
     double m_init_st;   //Sredni stan poczatkowy
     double r_init_st;   //Odchylenie od sredniego stanu poczatkowego
     double m_of_noise;  //Sredni poziom szumu/sygnalu dodawanego do wezlow
-    double r_of_noise;  //Odchylenie od sred. szumu/sygnalu dodawanego do wezlow
+	double r_of_noise;  //Odchylenie od sred. szumu/sygnalu dodawanego do wezlow
     double m_of_weight; //Srednia waga krawedzi
     double r_of_weight; //Odchylenie od sred. wagi krawedzi
     double asymmetry;   //Asymetria przekazywania komunikatow dodatnich wzgledem ujemnych
     
-    struct_array_source<Agent,double>* pNodeX;      //Wspolrzedne wezlow w aranzacji
+	struct_array_source<Agent,double>* pNodeX;      //Wspolrzedne wezlow w aranzacji
     struct_array_source<Agent,double>* pNodeY;      //------------//----------------
     struct_array_source<Agent,double>* pNodeR;      //Rozmiar wezla w aranzacji
     struct_array_source<Agent,double>* pNodeState;  //Aktywnosc wezlow
@@ -243,9 +243,9 @@ public:
         asymmetry(iasymmetry),      //Asymetria przekazywania komunikatow dodatnich wzgledem ujemnych
         world(LogName,50)   
     {
-        pNodeX=NULL;pNodeY=NULL;pNodeR=NULL;pNodeState=NULL;pNodePreState=NULL;pNodeDelta=NULL;
+		pNodeX=NULL;pNodeY=NULL;pNodeR=NULL;pNodeState=NULL;pNodePreState=NULL;pNodeDelta=NULL;
         pConnStart=NULL;pConnEnd=NULL;pConnWeight=NULL;pConnAcct=NULL;
-        StateStat=NULL;MinStateLog=NULL;MeanStateLog=NULL;MaxStateLog=NULL;
+		StateStat=NULL;MinStateLog=NULL;MeanStateLog=NULL;MaxStateLog=NULL;
         AcctStat=NULL;MinAcctLog=NULL;MeanAcctLog=NULL;MaxAcctLog=NULL;
     }
     
@@ -275,7 +275,7 @@ public:
     void InitialiseNotConnected(unsigned HowManyAgents);
     void InitialiseFullyConnected(unsigned HowManyAgents);
     void InitialiseRandomConnected(unsigned HowManyAgents);
-    void InitialiseFromWiesiekFile(const char* FileName);
+	void InitialiseFromWiesiekFile(const char* FileName);
 
     //Dodatkowe akcesory do zrodel statystycznych
     /*const*/ fifo_source<double>&    MeanStates() //Log srednich stanow. Bezs konst bo za duzo do przerabiania
@@ -288,10 +288,10 @@ public:
     virtual void initialize_layers();	
     //Wlasciwa implementacja kroku symulacji - do zaimplementowania
     virtual void simulate_one_step();	
-    // user defined actions after read symulation state from file
+	// user defined actions after read symulation state from file
     virtual void after_read_from_image();
-    //Generuje podstawowe zrodla dla wbudowanego menagera danych lub innego
-	virtual void make_basic_sources(sources_menager& WhatSourMen);
+	//Generuje podstawowe zrodla dla wbudowanego menagera danych
+	virtual void make_basic_sources();
     //Wspolpraca z menagerem wyswietlania
 	virtual void make_default_visualisation();//Tworzy domyslne "lufciki" i umieszcza w area_menager_base&  Menager
 	//Aktualizacja zawartosci okna statusu po n krokach symulacji
@@ -301,7 +301,7 @@ public:
 inline void Swiat::Agent::prepare_to_step()
 {
     this->pstate=this->state;
-    this->delta=0;    
+	this->delta=0;
 }
 
 inline void Swiat::Agent::add_to_delta(double input)
@@ -585,7 +585,7 @@ void Swiat::after_read_from_image()
 
 void Swiat::AllocSources() //Tworzy zrodla danych
 {
-    pNodeX=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::x,"X" );      //Wspolrzedne wezlow w aranzacji
+	pNodeX=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::x,"X" );      //Wspolrzedne wezlow w aranzacji
     pNodeY=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::y,"Y");      //------------//----------------
     pNodeR=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::r,"R");//Rozmiar wezla w aranzacji
     pNodeR->setminmax(0,1);//?DEBUG - promien jest staly na razie
@@ -615,33 +615,33 @@ void Swiat::AllocSources() //Tworzy zrodla danych
     MaxAcctLog=new fifo_source<double>(AcctStat->Max(),dlugosc_logow);assert(MaxAcctLog!=NULL);//Fifo z maximum
 }
 
-void Swiat::make_basic_sources(sources_menager& Series)
+void Swiat::make_basic_sources()
 {
 	world::make_basic_sources();
 
 	AllocSources();
+	//Series ---> this->Sources
+	Sources.insert(pNodeX); //1 oznacza, ze menager ma nie zwalniac
+	Sources.insert(pNodeY);
+	Sources.insert(pNodeR);
+	Sources.insert(pNodeState);
+	Sources.insert(pNodePreState);
+	Sources.insert(pNodeDelta);
 
-    Series.insert(pNodeX); //1 oznacza, ze menager ma nie zwalniac
-    Series.insert(pNodeY);
-    Series.insert(pNodeR);
-    Series.insert(pNodeState);
-    Series.insert(pNodePreState);
-    Series.insert(pNodeDelta);
-
-    Series.insert(pConnStart);
-    Series.insert(pConnEnd);
-	Series.insert(pConnWeight);
-    Series.insert(pConnAcct);
+	Sources.insert(pConnStart);
+	Sources.insert(pConnEnd);
+	Sources.insert(pConnWeight);
+	Sources.insert(pConnAcct);
     
-    Series.insert(StateStat);
-    Series.insert(MinStateLog);
-    Series.insert(MeanStateLog);
-    Series.insert(MaxStateLog);
+	Sources.insert(StateStat);
+	Sources.insert(MinStateLog);
+	Sources.insert(MeanStateLog);
+	Sources.insert(MaxStateLog);
 
-    Series.insert(AcctStat);
-    Series.insert(MinAcctLog);
-    Series.insert(MeanAcctLog);
-    Series.insert(MaxAcctLog);
+	Sources.insert(AcctStat);
+	Sources.insert(MinAcctLog);
+	Sources.insert(MeanAcctLog);
+    Sources.insert(MaxAcctLog);
 
     //I umieszczanie w logu tego co trzeba
     Log.insert(StateStat->Mean());
@@ -652,7 +652,7 @@ void Swiat::make_basic_sources(sources_menager& Series)
     Log.insert(AcctStat->Mean());
     Log.insert(AcctStat->Min());
     Log.insert(AcctStat->Max());
-    Log.insert(AcctStat->SD());
+	Log.insert(AcctStat->SD());
 }
 
 void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
@@ -666,11 +666,11 @@ void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
     
     float circle_max_size=(1.0f/agents.get_size())*0.5*M_PI;//*1.5*M_PI;// 2*Pi ??
 
-    if(connections.get_size()>0)
+	if(connections.get_size()>0)
     {
-        net_graph* png;
-        pom=png=new net_graph(250,0,500,250+3*char_height('X'),
-            pNodeX,0,
+		net_graph* png;
+		pom=png=new net_graph(250,0,500,250+3*char_height('X'),
+			pNodeX,0,
             pNodeY,0,
             pConnStart,0,
             pConnEnd,0,
@@ -680,14 +680,15 @@ void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
             NULL,0, //Arrows,1,
             pConnAcct,0,
             new circle_point(0.01f,circle_max_size),1
-            );
+			);
+
         png->setbackground(default_dark_gray);
         //png->setdatacolors(256,511);
     }
     else
     {
         pom=new scatter_graph(250,0,500,250+3*char_height('X'),
-            pNodeX,0,
+			pNodeX,0,
             pNodeY,0,
             pNodeState,0,//KOLORY - STAN
             pNodeR,0, //Rozmiary - promien
@@ -1046,7 +1047,7 @@ else
 {
 	wb_pchar buf(strlen(SCREENDUMPNAME)+20);
     buf.prn("%s_%ld",SCREENDUMPNAME,time(NULL));
-    Lufciki.set_dump_name(buf.get());
+	Lufciki.set_dump_name(buf.get());
 }
 
 //Przygotowanie danych i Swiata symulacji
