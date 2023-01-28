@@ -1,13 +1,14 @@
-//SYMULACJA KONFLIKTOW BOCA 2005 - UZUPELNIONY 10-11.2005
-////////////////////////////////////////////////////////////
+//SYMULACJA KONFLIKTOW BOCA 2005 - UZUPELNIONY 10-11.2005, 9-2010, 02-2014
+////////////////////////////////////////////////////////////////////////////////
 //1.1 Dodano obsluge wczytywania sieci z pliku
 //1.2 Dodano obsluge parametrów wywolania 
 //      i symetryczne traktowanie polaczen wczytanych z pliku
 //1.21 Poprawiono obsluge parametrów - blad dla stringów
-//     Dodano parametry kontroli wydruku oraz Min-Max dla skali stanów 
+//     Dodano parametry kontroli wydruku oraz Min-Max dla skali stanów
+//1.22 Updajte do poprawioenej wersji bibliotek SYMSHELL i WBRTM
 
-const char* SYMULATION_NAME="CONFLICTS 1.21 BOCA/WARSZAWA: "__DATE__;
-const char* SCREENDUMPNAME="CONFLICTS_v1.21_";
+const char* SYMULATION_NAME="CONFLICTS 1.22 BOCA/WARSZAWA: "__DATE__;
+const char* SCREENDUMPNAME="CONFLICTS_v1.22_";
 
 const char* LogName="conf.log";  //Nazwa tego logu
 const char* MetaExpFileName="metaconf.out";//Nazwa logu meta-eksperymentu
@@ -52,30 +53,33 @@ const char* HISTofSTATES="HISTORY OF THE STATE";
 const char* HISTofACCT="HISTORY OF THE ACTIVITY";
 const char* META_GRAPH="INPUT vs. MEAN STATE";
 
-#include "platform.hpp"
-#ifdef NEW_FASHION_CPP
+#include <cassert>
+#include <ctype.h>
 #include <iostream>
 using namespace std;
-#else
-#include <iostream.h>
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI       3.14159265358979323846
 #endif
-#include <assert.h>  
-#include <ctype.h>  
+
+#include "INCLUDE/platform.hpp" //????
 
 //#define POLISH_VERSION
-#include "OptParam.hpp"
-#include "wb_ptr.hpp"
-#include "wb_rand.hpp"
-#include "simpsour.hpp"
-#include "funcsour.hpp"
-#include "statsour.hpp"
-#include "fifosour.hpp"
-#include "sourmngr.hpp"
-#include "gadgets.hpp"
-#include "graphs.hpp"
-#include "areamngr.hpp"     
-#include "mainmngr.hpp"
-#include "world.hpp"
+#include "INCLUDE/OptParam.hpp"
+#include "INCLUDE/wb_ptr.hpp"
+#include "INCLUDE/wb_rand.hpp"
+
+#include "SYMSHELL/simpsour.hpp"
+#include "SYMSHELL/funcsour.hpp"
+#include "SYMSHELL/statsour.hpp"
+#include "SYMSHELL/fifosour.hpp"
+#include "SYMSHELL/sourmngr.hpp"
+#include "SYMSHELL/gadgets.hpp"
+#include "SYMSHELL/graphs.hpp"
+#include "SYMSHELL/areamngr.hpp"
+#include "SYMSHELL/mainmngr.hpp"
+#include "SYMSHELL/world.hpp"
 
 OptionalParameterBase* Parameters[]={ //sizeof(Parameters)/sizeof(Parameters[])
 new OptionalParameter<const char*>(LogName,"*.log","e.g confl1.log","LOGNAME","Single experiment outputfile name"),
@@ -111,10 +115,6 @@ new OptionalParameter<float>(DIAM_SIZE,0.0000000001,1,"DIAMS","Diamond size in t
 new OptionalParameter<unsigned>(ARROWS_DIV,1,100,"ARRDIV","Divider for arrows in the meta exp. visualisation")
 };
 
-#include <math.h>
-#ifndef M_PI
-#define M_PI       3.14159265358979323846
-#endif
 
 double niby_gauss_max(double mean,double max,unsigned steps=6)//12
 {
@@ -141,7 +141,7 @@ public:
     class Agent
     {
         double x,y,r;   //Wspolrzedne wizualizacyjne agenta
-        double state;   //Stan agenta -1..1 (?)
+		double state;   //Stan agenta -1..1 (?)
         double pstate;  //Poprzedni stan agenta
         double delta;   //Ostatni wplyw od innych
         wb_pchar Name;  //Nazwa agenta - dla sieci wczytywanych
@@ -173,7 +173,7 @@ public:
 
 private:
     wb_dynarray<Agent> agents;  //Lista agentów
-    wb_dynarray<Connection> connections; //Lista polaczen
+	wb_dynarray<Connection> connections; //Lista polaczen
     unsigned mode;//0 - bez polaczen , 1 - symetrycznie 2-niesymetryczne polaczenia
     unsigned dlugosc_logow; //Dlugosc buforow na statystyki symulacji
     unsigned reqested_number;//Zadana liczba agentow
@@ -290,10 +290,10 @@ public:
     // user defined actions after read symulation state from file
     virtual void after_read_from_image();
     //Generuje podstawowe zrodla dla wbudowanego menagera danych lub innego
-    virtual void make_basic_sources(sources_menager& WhatSourMen);    
+	virtual void make_basic_sources(sources_menager& WhatSourMen);
     //Wspolpraca z menagerem wyswietlania
-    virtual void make_default_visualisation(area_menager_base&  Menager);//Tworzy domyslne "lufciki" i umieszcza w     
-    //Aktualizacja zawartosci okna statusu po n krokach symulacji	  
+	virtual void make_default_visualisation();//Tworzy domyslne "lufciki" i umieszcza w area_menager_base&  Menager
+	//Aktualizacja zawartosci okna statusu po n krokach symulacji
     virtual void actualize_out_area(); 
 };
 
@@ -323,8 +323,8 @@ void Swiat::simulate_one_step()
     for(unsigned i=0;i<agents.get_size();i++)
         agents[i].prepare_to_step();
     
-    if(mode==1 || mode==2)//Fully connected or from file undirected
-    {
+	if(mode==1 || mode==2)//Fully connected or from file undirected
+	{
         for(unsigned j=0;j<connections.get_size();j++)
         {
             double p1,p2,w=connections[j].weight;
@@ -334,17 +334,17 @@ void Swiat::simulate_one_step()
             agents[s].add_to_delta(p1=(w*St*(St<0?asymmetry:1)));//Konflikt to wartosci ujemne - umownie oczywiscie
             St=agents[s].state;
             agents[e].add_to_delta(p2=(w*St*(St<0?asymmetry:1)));
-            connections[j].lastact=max(p1,p2);
+			connections[j].lastact=wbrtm::max(p1,p2);  //Jakiœ konflikt mimo ¿e jawinei nie ma using namespace wbrtm; TODO ?
         }
     }
-    
+
     if(mode==3 || mode==4)//Random directed or from file directed
     {
         for(unsigned j=0;j<connections.get_size();j++)
         {
             double p,w=connections[j].weight;
             unsigned s=connections[j].start_node;
-            unsigned e=connections[j].end_node;
+			unsigned e=connections[j].end_node;
             double St=agents[s].state;
             agents[e].add_to_delta(p=(w*St*(St<0?asymmetry:1)));//Konflikt to wartosci ujemne - umownie oczywiscie
             connections[j].lastact=p;
@@ -371,19 +371,19 @@ void Swiat::_AddNoise()
 
 void Swiat::_MakeStates(double mean,double max,unsigned start,unsigned end/*=-1*/) //Ustala agentom stany z rozkladu
 {
-    if(end==-1) 
-        end=agents.get_size();
+	if(end==unsigned(-1) )//SPECIALNE ZNACZENIE -1 "nie znam rozmiaru, weŸ i sprawdŸ"
+		end=agents.get_size();
  
     for(unsigned i=start;i<end;i++)
     {
-        agents[i]._setstate(0);//Bo moga byc stare wartosci
+		agents[i]._setstate(0);//Bo moga byc stare wartosci
         agents[i].add_directly(niby_gauss_max(mean,mean+max));
     }
 }
 
 void Swiat::_MakeCircle(double cx,double cy,double r,unsigned start,unsigned end/*=-1*/)
 {
-    if(end==-1) 
+	if(end==unsigned(-1)) //SPECIALNE ZNACZENIE -1 "nie znam rozmiaru, weŸ i sprawdŸ"
         end=agents.get_size();
     int ile=end-start;
     double krok=(2*M_PI)/ile;
@@ -420,59 +420,63 @@ void Swiat::InitialiseFullyConnected(unsigned HowManyAgents)
 
     unsigned how_many_con=((HowManyAgents*HowManyAgents)-HowManyAgents)/2; //( n^2-n )/ 2
     if(how_many_con!=connections.get_size())//Ale jak nie rowne i reinicjalizacja to kicha!!!
-        connections.alloc(how_many_con);
+		connections.alloc(how_many_con);
 
-    for(unsigned countcon=0,i=1;i<HowManyAgents;i++)
+	unsigned countcon=0; //zliczanie/przesuwanie
+	for(unsigned i=1;i<HowManyAgents;i++)
     {
         for(unsigned j=0;j<i;j++)
         {
             double Weight=niby_gauss_max(m_of_weight,m_of_weight+r_of_weight);
             connections[countcon++].set(i,j,Weight);
         }
-    }                                                  assert(countcon==how_many_con);
+	}                                                  assert(countcon==how_many_con);
 }
 
 void Swiat::InitialiseRandomConnected(unsigned HowManyAgents)
 {
     if(agents.get_size()!=HowManyAgents)//Ale jak nie rowne i reinicjalizacja to kicha!!!
         agents.alloc(HowManyAgents);    
-    
+
     _MakeCircle();//Uklada wszystkich w domyslne kolo
     _MakeStates(m_init_st,r_init_st); //Ustala agentom stany z rozkladu
     
     unsigned how_many_con=(HowManyAgents*HowManyAgents)-HowManyAgents; //n^2-n
     if(how_many_con!=connections.get_size())//Ale jak nie rowne i reinicjalizacja to kicha!!!
             connections.alloc(how_many_con);
-    
-    for(unsigned countcon=0,i=0;i<HowManyAgents;i++)
-    {
+
+	unsigned countcon=0;//ZLICZANIE
+	for(unsigned i=0;i<HowManyAgents;i++)
+	{
         for(unsigned j=0;j<HowManyAgents;j++)
         if(j!=i)
         {
-            double Weight=niby_gauss_max(m_of_weight,m_of_weight+r_of_weight);
+			double Weight=niby_gauss_max(m_of_weight,m_of_weight+r_of_weight);
             if(fabs(Weight)>0.000001)
                 connections[countcon++].set(i,j,Weight);
         }
-    }                                                  assert(countcon==how_many_con);
+	}                                                  assert(countcon==how_many_con);
 }
 
 
 void Swiat::InitialiseFromWiesiekFile(const char* FileName)
 {
-    ifstream Input(FileName,ios::in | ios::nocreate);
-    int HowManyAgents=INT_MAX;
-    Input>>HowManyAgents;
-    
-    if(HowManyAgents>0 && HowManyAgents<1000)
-        if(agents.get_size()==HowManyAgents)
+	ifstream Input(FileName,ios::in | ios::nocreate);
+	int HowManyAgents=INT_MAX;
+
+	Input>>HowManyAgents;
+														assert(HowManyAgents>=0);
+
+	if(HowManyAgents>0 && HowManyAgents<1000) //DLACZEGO 1000 ??? TODO
+		if(agents.get_size()==unsigned(HowManyAgents))//Rzut bo warning
         {//Juz bylo czytane
             _MakeStates(m_init_st,r_init_st); //Ustala agentom stany z rozkladu
-            for(int c=0;c<connections.get_size();c++)
-                connections[c].clean_act();
+			for(unsigned c=0;c<connections.get_size();c++)
+				connections[c].clean_act();
             cerr<<"Network already read before. Only states were cleaned."<<endl;
         }
         else
-        {
+		{
             agents.alloc(HowManyAgents); 
             Input.ignore(INT_MAX,'\n');
             for(int n=0;n<HowManyAgents;n++)
@@ -496,7 +500,9 @@ void Swiat::InitialiseFromWiesiekFile(const char* FileName)
                 if(1)//Tylko wtedy gdy stany nie s¹ dane w pliku. Na razie nie ma takiej mozliwosci
                 _MakeStates(m_init_st,r_init_st); //Ustala agentom stany z rozkladu
             }
-            Input.eatwhite();
+
+			Input >> ws;//old Input.eatwhite();
+
             unsigned countcon=0;
             connections.alloc(HowManyAgents*HowManyAgents);//Poczatkowo z zapasem
             while(!(Input.fail()) && !(Input.eof()))
@@ -504,11 +510,11 @@ void Swiat::InitialiseFromWiesiekFile(const char* FileName)
                 int S=-INT_MAX;
                 int E=-INT_MAX;
                 double W=-DBL_MAX;        
-                Input>>S>>E>>W;
+				Input>>S>>E>>W;
                 cerr<<S<<"-->"<<E<<' '<<W<<endl;
                 Input.ignore(INT_MAX,'\n');
-                Input.eatwhite();//Jest nadzieja :) , ¿e bedzie EOF a nie \r na koncu czytania
-                connections[countcon++].set(S,E,W);
+				Input>> ws ;//.eatwhite();//Jest nadzieja :) , ¿e bedzie EOF a nie \r na koncu czytania   TODO CHECK becouse changed
+				connections[countcon++].set(S,E,W);
             }
             connections.trunc(countcon);
             if(Input.fail())
@@ -573,7 +579,7 @@ void Swiat::actualize_out_area()
 // user defined actions after read symulation state from file
 void Swiat::after_read_from_image()
 {
-    //...???
+	//...???
 }
 
 void Swiat::AllocSources() //Tworzy zrodla danych
@@ -583,19 +589,19 @@ void Swiat::AllocSources() //Tworzy zrodla danych
     pNodeR=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::r,"R");//Rozmiar wezla w aranzacji
     pNodeR->setminmax(0,1);//?DEBUG - promien jest staly na razie
 
-    pNodeState=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::state,_LO("Stan","State"));  //Aktywnosc wezlow
-    pNodePreState=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::pstate,_LO("Pop.Stan","PrevSt"));  //Dawna aktywnosc wezlow
-    if(FixMinState<FixMaxState)
-    {
-        pNodeState->setminmax(FixMinState,FixMaxState);
-        pNodePreState->setminmax(FixMinState,FixMaxState);
+	pNodeState=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::state,lang("Stan","State"));  //Aktywnosc wezlow
+	pNodePreState=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::pstate,lang("Pop.Stan","PrevSt"));  //Dawna aktywnosc wezlow
+	if(FixMinState<FixMaxState)
+	{
+		pNodeState->setminmax(FixMinState,FixMaxState);
+		pNodePreState->setminmax(FixMinState,FixMaxState);
     }
     pNodeDelta=new struct_array_source<Agent,double>(agents.get_size(),agents.get_ptr_val(),&Agent::delta,"Delta");  //Dawna aktywnosc wezlow
     
-    pConnStart=new struct_array_source<Connection,size_t>(connections.get_size(),connections.get_ptr_val(),&Connection::start_node,_LO("Pocz¹tki","Starts"));//Indeksy pocz¹tków linii laczacych wezly sieci
-    pConnEnd=new struct_array_source<Connection,size_t>(connections.get_size(),connections.get_ptr_val(),&Connection::end_node,_LO("Koñce","Ends"));//Indeksy koncow linii laczacych wezly sieci
-    pConnWeight=new struct_array_source<Connection,double>(connections.get_size(),connections.get_ptr_val(),&Connection::weight,_LO("Wagi","Weights"));//Wagi polaczen
-    pConnAcct=new struct_array_source<Connection,double>(connections.get_size(),connections.get_ptr_val(),&Connection::lastact,_LO("Aktywnoœæ","Acctivity"));//Aktywnosci polaczen
+    pConnStart=new struct_array_source<Connection,size_t>(connections.get_size(),connections.get_ptr_val(),&Connection::start_node,lang("Pocz¹tki","Starts"));//Indeksy pocz¹tków linii laczacych wezly sieci
+    pConnEnd=new struct_array_source<Connection,size_t>(connections.get_size(),connections.get_ptr_val(),&Connection::end_node,lang("Koñce","Ends"));//Indeksy koncow linii laczacych wezly sieci
+    pConnWeight=new struct_array_source<Connection,double>(connections.get_size(),connections.get_ptr_val(),&Connection::weight,lang("Wagi","Weights"));//Wagi polaczen
+    pConnAcct=new struct_array_source<Connection,double>(connections.get_size(),connections.get_ptr_val(),&Connection::lastact,lang("Aktywnoœæ","Acctivity"));//Aktywnosci polaczen
 
     StateStat=new generic_basic_statistics_source(pNodeState);  assert(StateStat!=NULL);//Statystyka stanow wezlow
     MeanStateLog=new fifo_source<double>(StateStat->Mean(),dlugosc_logow);assert(MeanStateLog!=NULL);//Fifo ze sredniej
@@ -610,9 +616,9 @@ void Swiat::AllocSources() //Tworzy zrodla danych
 
 void Swiat::make_basic_sources(sources_menager& Series)
 {
-    world::make_basic_sources(Series);
+	world::make_basic_sources(Series);
 
-    AllocSources();
+	AllocSources();
 
     Series.insert(pNodeX); //1 oznacza, ze menager ma nie zwalniac
     Series.insert(pNodeY);
@@ -623,7 +629,7 @@ void Swiat::make_basic_sources(sources_menager& Series)
 
     Series.insert(pConnStart);
     Series.insert(pConnEnd);
-    Series.insert(pConnWeight);
+	Series.insert(pConnWeight);
     Series.insert(pConnAcct);
     
     Series.insert(StateStat);
@@ -650,7 +656,8 @@ void Swiat::make_basic_sources(sources_menager& Series)
 
 void Swiat::make_default_visualisation(area_menager_base& Lufciki)
 {
-    world::make_default_visualisation(Lufciki);
+	world::make_default_visualisation(Lufciki);
+
     this->OutArea->set(0,0,250,250);
 
     graph* pom=NULL;
@@ -687,7 +694,7 @@ void Swiat::make_default_visualisation(area_menager_base& Lufciki)
     }
 
     pom->setframe(128);
-    pom->settitle(_LO("MAPA SIECI","NETWORK MAPP"));
+    pom->settitle(lang("MAPA SIECI","NETWORK MAPP"));
     Lufciki.insert(pom);
 
     //Zaleznosc stanow nowych od poprzednich dla kazdego wez³a
@@ -713,7 +720,7 @@ void Swiat::make_default_visualisation(area_menager_base& Lufciki)
 							    1/*Wspolne minimum/maximum*/);
     assert(pom);
     pom->setframe(128);
-    pom->settitle(_LO("HISTORIA STANÓW",HISTofSTATES));
+    pom->settitle(lang("HISTORIA STANÓW",HISTofSTATES));
     Lufciki.insert(pom);
     }
 
@@ -726,7 +733,7 @@ void Swiat::make_default_visualisation(area_menager_base& Lufciki)
 							    1/*Wspolne minimum/maximum*/);
     assert(pom);
     pom->setframe(128);
-    pom->settitle(_LO("HISTORIA AKTYWNOŒCI",HISTofACCT));
+    pom->settitle(lang("HISTORIA AKTYWNOŒCI",HISTofACCT));
     Lufciki.insert(pom);
     }
 
@@ -863,12 +870,12 @@ void MetaExperyment::AddExperiment(double X,    //Tutaj bedzie to sredni szum
                                    double W //Waga strzalki dowolna
                                    )//
 {
-    assert(arrows.get_size()>countexp);//Tylko tu sie zgadza
+	assert(arrows.get_size()>countexp);//Tylko tu sie zgadza
     
     points[countpoints++].Set(X,Y0,Z0);//Punkt startowy
     
     double Y01=Y1;
-    if(Y0>Y1)
+	if(Y0>Y1)
         Y01=Y0-(ARROWS_DIV>0?(Y0-Y1)/ARROWS_DIV:0.05);
     else
         Y01=Y0+(ARROWS_DIV>0?(Y1-Y0)/ARROWS_DIV:0.05);
@@ -923,9 +930,9 @@ void MetaExperyment::tworz_lufciki(area_menager& Lufciki) //Generowanie lufcikow
         Sources.insert(_Z=new struct_array_source<Point,double>(points.get_size(),points.get_ptr_val(),&Point::Z,"Z"));
         assert(_Z->get_missing()==-DBL_MAX);
         
-        Sources.insert(_S=new struct_array_source<Arrow,size_t>(arrows.get_size(),arrows.get_ptr_val(),&Arrow::S,_LO("Pocz¹tki","Starts")));//Indeksy pocz¹tków linii laczacych wezly sieci
+        Sources.insert(_S=new struct_array_source<Arrow,size_t>(arrows.get_size(),arrows.get_ptr_val(),&Arrow::S,lang("Pocz¹tki","Starts")));//Indeksy pocz¹tków linii laczacych wezly sieci
         assert(_S->get_missing()==UINT_MAX);
-        Sources.insert(_E=new struct_array_source<Arrow,size_t>(arrows.get_size(),arrows.get_ptr_val(),&Arrow::E,_LO("Koñce","Ends")));//Indeksy koncow linii laczacych wezly sieci
+        Sources.insert(_E=new struct_array_source<Arrow,size_t>(arrows.get_size(),arrows.get_ptr_val(),&Arrow::E,lang("Koñce","Ends")));//Indeksy koncow linii laczacych wezly sieci
         assert(_E->get_missing()==UINT_MAX);
         Sources.insert(_Ayes=new function_source<constans<10> >(arrows.get_size(),0,1000000,"10",0,10));
         
@@ -967,8 +974,8 @@ void MetaExperyment::tworz_lufciki(area_menager& Lufciki) //Generowanie lufcikow
         -3,3
         );    
     
-    assert(pom!=NULL);
-    pom->settitle(_LO("FUNKCJE","FUNCTIONS"));
+	assert(pom!=NULL);
+	pom->settitle(lang("FUNKCJE","FUNCTIONS"));
     pom->setframe(20);
     Lufciki.insert(pom);
     
@@ -1029,12 +1036,12 @@ main_area_menager Lufciki(100,SWIDTH,SHEIGHT); //Zarzadzanie ekranem
 if(!Lufciki.start(SYMULATION_NAME,argc,argv,1))
 {
     printf("%s\n","Can't initialize graphics");
-    exit(1);
+	exit(1);
 }
 else
 //Utworzenie sensownej nazwy pliku(-ów) do zrzutow ekranu
 {
-    wb_pchar buf(strlen(SCREENDUMPNAME)+20);
+	wb_pchar buf(strlen(SCREENDUMPNAME)+20);
     buf.prn("%s_%ld",SCREENDUMPNAME,time(NULL));
     Lufciki.set_dump_name(buf.get());
 }
