@@ -1087,7 +1087,7 @@ else
                                                     double(def_asymmetry),
                                                          def_num_of_nodes);  
     
-    unsigned symulacja=0;
+	int symulacja=0;  //A¿ tyle ich nie bêdzie, ¿eby potrzebne by³o unsigned
 
     for(double StartMeanState=defm_start_mean_state;StartMeanState<=defm_end_mean_state;StartMeanState+=(defm_end_mean_state-defm_start_mean_state)/MultiExp)//Podwojna petla
         for(double NoiseMean=defm_start_noise_mean;NoiseMean<=defm_end_noise_mean;NoiseMean+=(defm_end_noise_mean-defm_start_noise_mean)/MultiExp)//Po stanie poczatkowym i szumie
