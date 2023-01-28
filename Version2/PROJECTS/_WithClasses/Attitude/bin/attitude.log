@@ -1,0 +1,22 @@
+
+EXP:	Mon Nov 05 21:12:51 2012
+attitude SIMULATION:
+Max Power=	100
+Tresh of Power=	100
+Num of Kl=	2
+Noise %=	0
+Self=	1
+Naighborhood=	-1/(3*3)
+ STEP/VERSION	NumOfClass(Attitude)	S(Attitude)	nS(Attitude)	MainClass(Attitude)	WhichMain(Attitude)	Stress(Attitude)	Stress(Prev. attitude)	S(Attitude,Prev. attitude)	nS(Attitude,Prev. attitude)	Chi^2(Attitude,Prev. attitude)	Loff(Attitude,Prev. attitude)	V^2(Attitude,Prev. attitude)	T^2(Attitude,Prev. attitude)	Tau_b(Attitude,Prev. attitude)	Tau_a(Attitude,Prev. attitude)	
+0	2	0.693075	0.999896	1265	1.5	0.495	0	-9999	-9999	-9999	-9999	-9999	-9999	-9999	-9999	
+
+EXP:	Mon Nov 05 21:13:26 2012
+attitude SIMULATION:
+Max Power=	100
+Tresh of Power=	100
+Num of Kl=	2
+Noise %=	0
+Self=	1
+Naighborhood=	-1/(3*3)
+ STEP/VERSION	NumOfClass(Attitude)	S(Attitude)	nS(Attitude)	MainClass(Attitude)	WhichMain(Attitude)	Stress(Attitude)	Stress(Prev. attitude)	S(Attitude,Prev. attitude)	nS(Attitude,Prev. attitude)	Chi^2(Attitude,Prev. attitude)	Loff(Attitude,Prev. attitude)	V^2(Attitude,Prev. attitude)	T^2(Attitude,Prev. attitude)	Tau_b(Attitude,Prev. attitude)	Tau_a(Attitude,Prev. attitude)	
+0	2	0.692859	0.999584	1280	1.5	0.503	0	-9999	-9999	-9999	-9999	-9999	-9999	-9999	-9999	
