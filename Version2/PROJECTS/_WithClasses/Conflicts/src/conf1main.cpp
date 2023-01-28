@@ -654,8 +654,9 @@ void Swiat::make_basic_sources(sources_menager& Series)
     Log.insert(AcctStat->SD());
 }
 
-void Swiat::make_default_visualisation(area_menager_base& Lufciki)
+void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
 {
+														assert(&Lufciki != NULL);
 	//world::make_default_visualisation(Lufciki);
 
     this->OutArea->set(0,0,250,250);
