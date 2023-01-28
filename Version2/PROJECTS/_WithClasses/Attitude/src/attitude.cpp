@@ -1,11 +1,17 @@
 //Dosyc prosta symulacja zmiany pogladow - attitude
 //Uzyskana przez uproszczenie programu LANGUAGES
 /////////////////////////////////////////////////////////////////
-const char* WINDOW_HEADER="ATTITUDES version 0.021";
-const char* SYMULATION_NAME="attitudes_v0.021";
+const char* WINDOW_HEADER="ATTITUDES version 1.01b (0.03)";
+const char* SYMULATION_NAME="attitudes_v1.01b";
+//1.01: Zrekompilowane z now¹ wersj¹ biblioteki lufcików (15.02.2006)
 
 #include <stdlib.h>
+#include "platform.hpp"
+#ifdef NEW_FASHION_CPP
+#include <iostream>
+#else
 #include <iostream.h>
+#endif
 #include "wbminmax.hpp"
 #include "arand.h"
 #include "aworld.h"
@@ -14,6 +20,7 @@ unsigned SWIDTH=750;
 unsigned SHEIGHT=550;
 
 unsigned internal_log=7000; //Nieobiektowo przekazywane do metody inicializacji zrodel 
+
 char  LogName[512]="attitude.log\0-------------------+--";
 char HistName[512]="\0--+---------attitude.otx----------";
 char MapLName[512]="\0--+---------attitude.gif----------";
@@ -48,13 +55,13 @@ for(int i=1;i<argc;i++)
     if( *argv[i]=='-' ) /* Opcja X lub symshella */
 		continue;
 	//Uppercasing
-	wb_pchar hand=clone_str(argv[i]);
+	wb_pchar hand( clone_str(argv[i]) );
 	char*    rob=hand.get_ptr_val();
 	char*    pom=strchr(rob,'=');
 	if(pom==NULL) 
 			goto ERROR; //NA PEWNO ZLE
 	*pom='\0';
-	strupr(rob);
+	_strupr(rob);
 	*pom='=';
 	if((pom=strstr(rob,"SPCH="))!=NULL) //Nie NULL czyli jest
 	{

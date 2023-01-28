@@ -13,9 +13,10 @@
 #include "gadgets.hpp" 
 #include "wb_ptrio.h"
 
-const RAMKA=4;
+const int RAMKA=4;
 extern const char* SYMULATION_NAME;
 
+/* //jest w "wbminmax.hpp"
 template <class T>
 inline void wb_swap(T& a,T& b)
 {
@@ -23,6 +24,7 @@ inline void wb_swap(T& a,T& b)
 	a=b;
 	b=c;
 }
+*/
 
 //Konstrukcja agentow
 ///////////////////////////////////
@@ -412,7 +414,7 @@ void aworld::after_read_from_image()
 void aworld::initialize_layers()
 //-------------------------------------
 {
-	static first=1;//TYMCZASOWE WYLACZENIE NADMIARU WYDRUKOW!!!
+	static int first=1;//TYMCZASOWE WYLACZENIE NADMIARU WYDRUKOW!!!
 	if(first)
 		Log.GetStream()<<"attitude SIMULATION:";
 	//odl_sasiad=1,//Rozmiar sasiedztwa
@@ -450,15 +452,15 @@ void aworld::initialize_layers()
 	
 	//			USTALANIE STANÓW AGENTÓW
 	//Wczytuje uzywajac konstruktora lub klonowania gdy niema, wiec inicjuje reszte pól.
-	int from1= Agenci.init_from_bitmap(MappName.get_ptr_val(),aagent::assignPow);
-	int from2= Agenci.init_from_bitmap(MaplName.get_ptr_val(),aagent::assign123);
+	int from1= Agenci.init_from_bitmap(MappName.get_ptr_val(),&aagent::assignPow);
+	int from2= Agenci.init_from_bitmap(MaplName.get_ptr_val(),&aagent::assign123);
 	
 	//Jesli nie zainicjowane to prowizoryczna inicjacja przez konstruktory lub klonowanie
 	if(from1!=1 && from2!=1)
 		Agenci.reallocate_all();
 	
 	//Zabija m jesli w masce jesc czarny kolor
-	if(Agenci.init_from_bitmap(MaskName.get_ptr_val(),aagent::killBlack)==1 )
+	if(Agenci.init_from_bitmap(MaskName.get_ptr_val(),&aagent::killBlack)==1 )
 		Agenci.deallocate_not_OK();
 
 	first=0;//Koniec pierwszego wywolania //TYMCZASOWO!!!
@@ -479,7 +481,7 @@ void aworld::simulate_one_step()
 		{
 			size_t index=MyGeom->get_next(Full);//Uzyskujemy index  agenta	
 					 
-			assert(index!=FULL);				//... tutaj nie powinno sie zdarzyc
+			assert(index!=any_layer_base::FULL);				//... tutaj nie powinno sie zdarzyc
 
 			aagent& CenterAgent=*(Agenci.get_ptr(index).get_ptr_val());// Uzyskujemy referencje do agenta omijajac asercje na NULL
 			
@@ -499,7 +501,7 @@ void aworld::simulate_one_step()
 		{
 			size_t index=MyGeom->get_next(Full);//Uzyskujemy index  agenta	
 					 
-			assert(index!=FULL);				//... tutaj nie powinno sie zdarzyc
+			assert(index!=any_layer_base::FULL);				//... tutaj nie powinno sie zdarzyc
 
 			aagent& CenterAgent=*(Agenci.get_ptr(index).get_ptr_val());// Uzyskujemy referencje do agenta omijajac asercje na NULL
 			
@@ -522,7 +524,7 @@ void aworld::simulate_one_step()
 		{	
 			size_t index=MyGeom->get_next(Monte);//Uzyskujemy index losowo wybranego agenta	
 		
-			assert(index!=FULL);				//... tutaj nie powinno sie zdarzyc
+			assert(index!=any_layer_base::FULL);				//... tutaj nie powinno sie zdarzyc
 			
 			aagent& CenterAgent=*(Agenci.get_ptr(index).get_ptr_val());// Uzyskujemy referencje do agenta omijajac asercje na NULL
 			if(Agenci.is_empty(CenterAgent))	// Sprawdzamy czy nie jest to pusta komórka (NULL)
@@ -542,8 +544,8 @@ void aworld::simulate_one_step()
 	}
 	
 	
-	
 }
+
 
 
 int aworld::CheckChange(const geometry_base* MyGeom,
@@ -555,17 +557,14 @@ int aworld::CheckChange(const geometry_base* MyGeom,
 	
 	if(DRAND()<=aagent::MutationLevel)//Rzadka, spontaniczna zmiana pogladu
 	{
-		int atti=RANDOM(IleKate);
-		assert(0<=atti && atti<IleKate);
-		
+		int atti=RANDOM(IleKate);       	assert(0<=atti && atti<IleKate);
 		CenterAgent.Second=atti;			//zmieniamy w agencie centralnym
 		return 1;
 	}
 	
 	
 	//TABLICA POMOCNICZA
-	wb_dynarray<int> Firsts(IleKate);
-	assert(Firsts);
+	wb_dynarray<int> Firsts(IleKate);               assert(Firsts.IsOK());
 	//Czyszczenie licznika
 	memset(Firsts.get_ptr_val(),0,sizeof(int)*IleKate);
 
@@ -587,7 +586,7 @@ int aworld::CheckChange(const geometry_base* MyGeom,
 	while(Neigh)
 	{
 		size_t index2=MyGeom->get_next(Neigh);//Uzyskujemy index sasiada		
-		if(index2==FULL || index2==index)	//Jesli poza obszarem symulacji lub w 
+		if(index2==any_layer_base::FULL || index2==index)	//Jesli poza obszarem symulacji lub w 
 			continue;				//centrum obszaru to dalej byloby bez sensu.
 		
 		aagent& PeryfAgent=*(Agenci.get_ptr(index2).get_ptr_val());//Uzyskujemy referencje do sasiada omijajac asercje na NULL
