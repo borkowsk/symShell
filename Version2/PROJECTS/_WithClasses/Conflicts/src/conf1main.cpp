@@ -656,12 +656,12 @@ void Swiat::make_basic_sources(sources_menager& Series)
 
 void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
 {
-														assert(&Lufciki != NULL);
+											assert(this->HasAreaMenager());
 	//world::make_default_visualisation(Lufciki);
 
-    this->OutArea->set(0,0,250,250);
+	this->OutArea->set(0,0,250,250);
 
-    graph* pom=NULL;
+	graph* pom=NULL;
     
     float circle_max_size=(1.0f/agents.get_size())*0.5*M_PI;//*1.5*M_PI;// 2*Pi ??
 
