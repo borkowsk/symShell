@@ -696,12 +696,13 @@ void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
 
     pom->setframe(128);
     pom->settitle(lang("MAPA SIECI","NETWORK MAPP"));
-    Lufciki.insert(pom);
+	this->MyAreaMenager().insert(pom);
 
     //Zaleznosc stanow nowych od poprzednich dla kazdego wez³a
-    pom=new scatter_graph(Lufciki.getwidth()-249,
-                          Lufciki.getheight()-250-3*char_height('X'),
-                          Lufciki.getwidth()-1,Lufciki.getheight()-1,
+	pom=new scatter_graph(this->MyAreaMenager().getwidth()-249,
+						  this->MyAreaMenager().getheight()-250-3*char_height('X'),
+						  this->MyAreaMenager().getwidth()-1,
+						  this->MyAreaMenager().getheight()-1,
             pNodePreState,0,
             pNodeState,0,
             pNodeDelta,0
@@ -710,7 +711,7 @@ void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
     pom->setbackground(default_light_gray);
     pom->settitle("Xn-i vs. Xn");
     //pom->series_info->setminmx();
-    Lufciki.insert(pom);
+	this->MyAreaMenager().insert(pom);
 
     //STATYSTYKA STANÓW 
     {
@@ -722,7 +723,7 @@ void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
     assert(pom);
     pom->setframe(128);
     pom->settitle(lang("HISTORIA STANÓW",HISTofSTATES));
-    Lufciki.insert(pom);
+	this->MyAreaMenager().insert(pom);
     }
 
     //Statystyka aktywnosci
@@ -732,10 +733,10 @@ void Swiat::make_default_visualisation() // area_menager_base& Lufciki     ?
 							    3,data,
 								//0/* Z reskalowaniem */);
 							    1/*Wspolne minimum/maximum*/);
-    assert(pom);
+	assert(pom);
     pom->setframe(128);
     pom->settitle(lang("HISTORIA AKTYWNOŒCI",HISTofACCT));
-    Lufciki.insert(pom);
+	this->MyAreaMenager().insert(pom);
     }
 
     Sources.new_data_version(1,1);//Oznajmia seriom ze dane sie uaktualnily	(po inicjacji)
