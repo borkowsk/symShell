@@ -616,7 +616,7 @@ void Swiat::AllocSources() //Tworzy zrodla danych
 
 void Swiat::make_basic_sources(sources_menager& Series)
 {
-	world::make_basic_sources(Series);
+	world::make_basic_sources();
 
 	AllocSources();
 
@@ -656,7 +656,7 @@ void Swiat::make_basic_sources(sources_menager& Series)
 
 void Swiat::make_default_visualisation(area_menager_base& Lufciki)
 {
-	world::make_default_visualisation(Lufciki);
+	//world::make_default_visualisation(Lufciki);
 
     this->OutArea->set(0,0,250,250);
 
