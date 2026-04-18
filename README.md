@@ -24,8 +24,7 @@ You can use this software freely for educational and research purposes, but if y
 
 **COFFEE**
 
-https://www.buymeacoffee.com/wborkowsk
-
-https://www.paypal.com/paypalme/wborkowsk
+[☕☕☕ buycoffee.to](https://buycoffee.to/adalbertus)<br>
+[🪙 🪙  PayPal](https://www.paypal.com/paypalme/wborkowsk)
 
 
