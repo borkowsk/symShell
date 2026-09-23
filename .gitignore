@@ -1,6 +1,7 @@
 # Prerequisites
 *.d
 *.INI
+._bak/
 
 # Compiled Object files
 *.slo
